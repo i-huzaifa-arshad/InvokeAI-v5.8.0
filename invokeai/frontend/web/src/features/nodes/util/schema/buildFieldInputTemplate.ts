@@ -15,9 +15,11 @@ import type {
   FloatFieldInputTemplate,
   FloatGeneratorFieldInputTemplate,
   FluxMainModelFieldInputTemplate,
+  FluxReduxModelFieldInputTemplate,
   FluxVAEModelFieldInputTemplate,
   ImageFieldCollectionInputTemplate,
   ImageFieldInputTemplate,
+  ImageGeneratorFieldInputTemplate,
   IntegerFieldCollectionInputTemplate,
   IntegerFieldInputTemplate,
   IntegerGeneratorFieldInputTemplate,
@@ -29,6 +31,7 @@ import type {
   SD3MainModelFieldInputTemplate,
   SDXLMainModelFieldInputTemplate,
   SDXLRefinerModelFieldInputTemplate,
+  SigLipModelFieldInputTemplate,
   SpandrelImageToImageModelFieldInputTemplate,
   StatefulFieldType,
   StatelessFieldInputTemplate,
@@ -41,6 +44,7 @@ import type {
 } from 'features/nodes/types/field';
 import {
   getFloatGeneratorArithmeticSequenceDefaults,
+  getImageGeneratorImagesFromBoardDefaults,
   getIntegerGeneratorArithmeticSequenceDefaults,
   getStringGeneratorParseStringDefaults,
   isFloatCollectionFieldType,
@@ -525,6 +529,33 @@ const buildSpandrelImageToImageModelFieldInputTemplate: FieldInputTemplateBuilde
 
   return template;
 };
+
+const buildSigLipModelFieldInputTemplate: FieldInputTemplateBuilder<SigLipModelFieldInputTemplate> = ({
+  schemaObject,
+  baseField,
+  fieldType,
+}) => {
+  const template: SigLipModelFieldInputTemplate = {
+    ...baseField,
+    type: fieldType,
+    default: schemaObject.default ?? undefined,
+  };
+  return template;
+};
+
+const buildFluxReduxModelFieldInputTemplate: FieldInputTemplateBuilder<FluxReduxModelFieldInputTemplate> = ({
+  schemaObject,
+  baseField,
+  fieldType,
+}) => {
+  const template: FluxReduxModelFieldInputTemplate = {
+    ...baseField,
+    type: fieldType,
+    default: schemaObject.default ?? undefined,
+  };
+  return template;
+};
+
 const buildBoardFieldInputTemplate: FieldInputTemplateBuilder<BoardFieldInputTemplate> = ({
   schemaObject,
   baseField,
@@ -533,7 +564,7 @@ const buildBoardFieldInputTemplate: FieldInputTemplateBuilder<BoardFieldInputTem
   const template: BoardFieldInputTemplate = {
     ...baseField,
     type: fieldType,
-    default: schemaObject.default ?? undefined,
+    default: schemaObject.default ?? 'auto',
   };
 
   return template;
@@ -685,6 +716,20 @@ const buildStringGeneratorFieldInputTemplate: FieldInputTemplateBuilder<StringGe
   return template;
 };
 
+const buildImageGeneratorFieldInputTemplate: FieldInputTemplateBuilder<ImageGeneratorFieldInputTemplate> = ({
+  // schemaObject,
+  baseField,
+  fieldType,
+}) => {
+  const template: ImageGeneratorFieldInputTemplate = {
+    ...baseField,
+    type: fieldType,
+    default: getImageGeneratorImagesFromBoardDefaults(),
+  };
+
+  return template;
+};
+
 export const TEMPLATE_BUILDER_MAP: Record<StatefulFieldType['name'], FieldInputTemplateBuilder> = {
   BoardField: buildBoardFieldInputTemplate,
   BooleanField: buildBooleanFieldInputTemplate,
@@ -713,9 +758,12 @@ export const TEMPLATE_BUILDER_MAP: Record<StatefulFieldType['name'], FieldInputT
   CLIPGEmbedModelField: buildCLIPGEmbedModelFieldInputTemplate,
   FluxVAEModelField: buildFluxVAEModelFieldInputTemplate,
   ControlLoRAModelField: buildControlLoRAModelFieldInputTemplate,
+  SigLipModelField: buildSigLipModelFieldInputTemplate,
+  FluxReduxModelField: buildFluxReduxModelFieldInputTemplate,
   FloatGeneratorField: buildFloatGeneratorFieldInputTemplate,
   IntegerGeneratorField: buildIntegerGeneratorFieldInputTemplate,
   StringGeneratorField: buildStringGeneratorFieldInputTemplate,
+  ImageGeneratorField: buildImageGeneratorFieldInputTemplate,
 } as const;
 
 export const buildFieldInputTemplate = (

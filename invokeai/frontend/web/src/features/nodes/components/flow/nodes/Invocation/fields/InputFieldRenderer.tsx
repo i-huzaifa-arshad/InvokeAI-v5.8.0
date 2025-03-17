@@ -4,6 +4,7 @@ import { FloatFieldSlider } from 'features/nodes/components/flow/nodes/Invocatio
 import { FloatFieldCollectionInputComponent } from 'features/nodes/components/flow/nodes/Invocation/fields/inputs/FloatFieldCollectionInputComponent';
 import { FloatGeneratorFieldInputComponent } from 'features/nodes/components/flow/nodes/Invocation/fields/inputs/FloatGeneratorFieldComponent';
 import { ImageFieldCollectionInputComponent } from 'features/nodes/components/flow/nodes/Invocation/fields/inputs/ImageFieldCollectionInputComponent';
+import { ImageGeneratorFieldInputComponent } from 'features/nodes/components/flow/nodes/Invocation/fields/inputs/ImageGeneratorFieldComponent';
 import { IntegerFieldCollectionInputComponent } from 'features/nodes/components/flow/nodes/Invocation/fields/inputs/IntegerFieldCollectionInputComponent';
 import { IntegerGeneratorFieldInputComponent } from 'features/nodes/components/flow/nodes/Invocation/fields/inputs/IntegerGeneratorFieldComponent';
 import ModelIdentifierFieldInputComponent from 'features/nodes/components/flow/nodes/Invocation/fields/inputs/ModelIdentifierFieldInputComponent';
@@ -43,12 +44,16 @@ import {
   isFloatGeneratorFieldInputTemplate,
   isFluxMainModelFieldInputInstance,
   isFluxMainModelFieldInputTemplate,
+  isFluxReduxModelFieldInputInstance,
+  isFluxReduxModelFieldInputTemplate,
   isFluxVAEModelFieldInputInstance,
   isFluxVAEModelFieldInputTemplate,
   isImageFieldCollectionInputInstance,
   isImageFieldCollectionInputTemplate,
   isImageFieldInputInstance,
   isImageFieldInputTemplate,
+  isImageGeneratorFieldInputInstance,
+  isImageGeneratorFieldInputTemplate,
   isIntegerFieldCollectionInputInstance,
   isIntegerFieldCollectionInputTemplate,
   isIntegerFieldInputInstance,
@@ -71,6 +76,8 @@ import {
   isSDXLMainModelFieldInputTemplate,
   isSDXLRefinerModelFieldInputInstance,
   isSDXLRefinerModelFieldInputTemplate,
+  isSigLipModelFieldInputInstance,
+  isSigLipModelFieldInputTemplate,
   isSpandrelImageToImageModelFieldInputInstance,
   isSpandrelImageToImageModelFieldInputTemplate,
   isStringFieldCollectionInputInstance,
@@ -88,6 +95,8 @@ import {
 } from 'features/nodes/types/field';
 import type { NodeFieldElement } from 'features/nodes/types/workflow';
 import { memo } from 'react';
+import type { Equals } from 'tsafe';
+import { assert } from 'tsafe';
 
 import BoardFieldInputComponent from './inputs/BoardFieldInputComponent';
 import BooleanFieldInputComponent from './inputs/BooleanFieldInputComponent';
@@ -99,6 +108,7 @@ import ControlLoRAModelFieldInputComponent from './inputs/ControlLoraModelFieldI
 import ControlNetModelFieldInputComponent from './inputs/ControlNetModelFieldInputComponent';
 import EnumFieldInputComponent from './inputs/EnumFieldInputComponent';
 import FluxMainModelFieldInputComponent from './inputs/FluxMainModelFieldInputComponent';
+import FluxReduxModelFieldInputComponent from './inputs/FluxReduxModelFieldInputComponent';
 import FluxVAEModelFieldInputComponent from './inputs/FluxVAEModelFieldInputComponent';
 import ImageFieldInputComponent from './inputs/ImageFieldInputComponent';
 import IPAdapterModelFieldInputComponent from './inputs/IPAdapterModelFieldInputComponent';
@@ -108,6 +118,7 @@ import RefinerModelFieldInputComponent from './inputs/RefinerModelFieldInputComp
 import SchedulerFieldInputComponent from './inputs/SchedulerFieldInputComponent';
 import SD3MainModelFieldInputComponent from './inputs/SD3MainModelFieldInputComponent';
 import SDXLMainModelFieldInputComponent from './inputs/SDXLMainModelFieldInputComponent';
+import SigLipModelFieldInputComponent from './inputs/SigLipModelFieldInputComponent';
 import SpandrelImageToImageModelFieldInputComponent from './inputs/SpandrelImageToImageModelFieldInputComponent';
 import T2IAdapterModelFieldInputComponent from './inputs/T2IAdapterModelFieldInputComponent';
 import T5EncoderModelFieldInputComponent from './inputs/T5EncoderModelFieldInputComponent';
@@ -122,6 +133,9 @@ type Props = {
 export const InputFieldRenderer = memo(({ nodeId, fieldName, settings }: Props) => {
   const field = useInputFieldInstance(nodeId, fieldName);
   const template = useInputFieldTemplate(nodeId, fieldName);
+
+  // When deciding which component to render, first we check the type of the template, which is more efficient than the
+  // instance type check. The instance type check uses zod and is slower.
 
   if (isStringFieldCollectionInputTemplate(template)) {
     if (!isStringFieldCollectionInputInstance(field)) {
@@ -145,6 +159,8 @@ export const InputFieldRenderer = memo(({ nodeId, fieldName, settings }: Props) 
       return <StringFieldInput nodeId={nodeId} field={field} fieldTemplate={template} />;
     } else if (settings.component === 'textarea') {
       return <StringFieldTextarea nodeId={nodeId} field={field} fieldTemplate={template} />;
+    } else {
+      assert<Equals<never, typeof settings.component>>(false, 'Unexpected settings.component');
     }
   }
 
@@ -159,32 +175,47 @@ export const InputFieldRenderer = memo(({ nodeId, fieldName, settings }: Props) 
     if (!isIntegerFieldInputInstance(field)) {
       return null;
     }
-    if (settings?.type !== 'integer-field-config') {
+    if (!settings || settings.type !== 'integer-field-config') {
       return <IntegerFieldInput nodeId={nodeId} field={field} fieldTemplate={template} />;
     }
+
     if (settings.component === 'number-input') {
-      return <IntegerFieldInput nodeId={nodeId} field={field} fieldTemplate={template} />;
-    } else if (settings.component === 'slider') {
-      return <IntegerFieldSlider nodeId={nodeId} field={field} fieldTemplate={template} />;
-    } else if (settings.component === 'number-input-and-slider') {
-      return <IntegerFieldInputAndSlider nodeId={nodeId} field={field} fieldTemplate={template} />;
+      return <IntegerFieldInput nodeId={nodeId} field={field} fieldTemplate={template} settings={settings} />;
     }
+
+    if (settings.component === 'slider') {
+      return <IntegerFieldSlider nodeId={nodeId} field={field} fieldTemplate={template} settings={settings} />;
+    }
+
+    if (settings.component === 'number-input-and-slider') {
+      return <IntegerFieldInputAndSlider nodeId={nodeId} field={field} fieldTemplate={template} settings={settings} />;
+    }
+
+    assert<Equals<never, typeof settings.component>>(false, 'Unexpected settings.component');
   }
 
   if (isFloatFieldInputTemplate(template)) {
     if (!isFloatFieldInputInstance(field)) {
       return null;
     }
-    if (settings?.type !== 'float-field-config') {
+
+    if (!settings || settings.type !== 'float-field-config') {
       return <FloatFieldInput nodeId={nodeId} field={field} fieldTemplate={template} />;
     }
+
     if (settings.component === 'number-input') {
-      return <FloatFieldInput nodeId={nodeId} field={field} fieldTemplate={template} />;
-    } else if (settings.component === 'slider') {
-      return <FloatFieldSlider nodeId={nodeId} field={field} fieldTemplate={template} />;
-    } else if (settings.component === 'number-input-and-slider') {
-      return <FloatFieldInputAndSlider nodeId={nodeId} field={field} fieldTemplate={template} />;
+      return <FloatFieldInput nodeId={nodeId} field={field} fieldTemplate={template} settings={settings} />;
     }
+
+    if (settings.component === 'slider') {
+      return <FloatFieldSlider nodeId={nodeId} field={field} fieldTemplate={template} settings={settings} />;
+    }
+
+    if (settings.component === 'number-input-and-slider') {
+      return <FloatFieldInputAndSlider nodeId={nodeId} field={field} fieldTemplate={template} settings={settings} />;
+    }
+
+    assert<Equals<never, typeof settings.component>>(false, 'Unexpected settings.component');
   }
 
   if (isIntegerFieldCollectionInputTemplate(template)) {
@@ -333,6 +364,20 @@ export const InputFieldRenderer = memo(({ nodeId, fieldName, settings }: Props) 
     return <SpandrelImageToImageModelFieldInputComponent nodeId={nodeId} field={field} fieldTemplate={template} />;
   }
 
+  if (isSigLipModelFieldInputTemplate(template)) {
+    if (!isSigLipModelFieldInputInstance(field)) {
+      return null;
+    }
+    return <SigLipModelFieldInputComponent nodeId={nodeId} field={field} fieldTemplate={template} />;
+  }
+
+  if (isFluxReduxModelFieldInputTemplate(template)) {
+    if (!isFluxReduxModelFieldInputInstance(field)) {
+      return null;
+    }
+    return <FluxReduxModelFieldInputComponent nodeId={nodeId} field={field} fieldTemplate={template} />;
+  }
+
   if (isColorFieldInputTemplate(template)) {
     if (!isColorFieldInputInstance(field)) {
       return null;
@@ -387,6 +432,13 @@ export const InputFieldRenderer = memo(({ nodeId, fieldName, settings }: Props) 
       return null;
     }
     return <StringGeneratorFieldInputComponent nodeId={nodeId} field={field} fieldTemplate={template} />;
+  }
+
+  if (isImageGeneratorFieldInputTemplate(template)) {
+    if (!isImageGeneratorFieldInputInstance(field)) {
+      return null;
+    }
+    return <ImageGeneratorFieldInputComponent nodeId={nodeId} field={field} fieldTemplate={template} />;
   }
 
   return null;

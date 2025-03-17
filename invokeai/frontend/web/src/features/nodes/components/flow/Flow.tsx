@@ -20,7 +20,6 @@ import { useConnection } from 'features/nodes/hooks/useConnection';
 import { useIsValidConnection } from 'features/nodes/hooks/useIsValidConnection';
 import { useNodeCopyPaste } from 'features/nodes/hooks/useNodeCopyPaste';
 import { useSyncExecutionState } from 'features/nodes/hooks/useNodeExecutionState';
-import { useWorkflowWatcher } from 'features/nodes/hooks/useWorkflowWatcher';
 import {
   $addNodeCmdk,
   $cursorPos,
@@ -44,6 +43,7 @@ import {
 } from 'features/nodes/store/selectors';
 import { connectionToEdge } from 'features/nodes/store/util/reactFlowUtil';
 import { selectSelectionMode, selectShouldSnapToGrid } from 'features/nodes/store/workflowSettingsSlice';
+import { NO_DRAG_CLASS, NO_PAN_CLASS, NO_WHEEL_CLASS } from 'features/nodes/types/constants';
 import type { AnyEdge, AnyNode } from 'features/nodes/types/invocation';
 import { useRegisteredHotkeys } from 'features/system/components/HotkeysModal/useHotkeyData';
 import type { CSSProperties, MouseEvent } from 'react';
@@ -94,7 +94,6 @@ export const Flow = memo(() => {
   const isWorkflowsFocused = useIsRegionFocused('workflows');
   useFocusRegion('workflows', flowWrapper);
 
-  useWorkflowWatcher();
   useSyncExecutionState();
   const [borderRadius] = useToken('radii', ['base']);
   const flowStyles = useMemo<CSSProperties>(() => ({ borderRadius }), [borderRadius]);
@@ -253,7 +252,7 @@ export const Flow = memo(() => {
     id: 'pasteSelection',
     category: 'workflows',
     callback: pasteSelection,
-    options: { preventDefault: true },
+    options: { enabled: isWorkflowsFocused, preventDefault: true },
     dependencies: [pasteSelection],
   });
 
@@ -261,7 +260,7 @@ export const Flow = memo(() => {
     id: 'pasteSelectionWithEdges',
     category: 'workflows',
     callback: pasteSelectionWithEdges,
-    options: { preventDefault: true },
+    options: { enabled: isWorkflowsFocused, preventDefault: true },
     dependencies: [pasteSelectionWithEdges],
   });
 
@@ -271,7 +270,7 @@ export const Flow = memo(() => {
     callback: () => {
       dispatch(undo());
     },
-    options: { enabled: mayUndo, preventDefault: true },
+    options: { enabled: isWorkflowsFocused && mayUndo, preventDefault: true },
     dependencies: [mayUndo],
   });
 
@@ -281,7 +280,7 @@ export const Flow = memo(() => {
     callback: () => {
       dispatch(redo());
     },
-    options: { enabled: mayRedo, preventDefault: true },
+    options: { enabled: isWorkflowsFocused && mayRedo, preventDefault: true },
     dependencies: [mayRedo],
   });
 
@@ -356,6 +355,9 @@ export const Flow = memo(() => {
       selectionMode={selectionMode}
       elevateEdgesOnSelect
       nodeDragThreshold={1}
+      noDragClassName={NO_DRAG_CLASS}
+      noWheelClassName={NO_WHEEL_CLASS}
+      noPanClassName={NO_PAN_CLASS}
     >
       <Background />
     </ReactFlow>
