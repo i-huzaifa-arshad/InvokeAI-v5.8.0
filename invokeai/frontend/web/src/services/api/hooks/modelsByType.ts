@@ -11,6 +11,7 @@ import type { AnyModelConfig } from 'services/api/types';
 import {
   isCLIPEmbedModelConfig,
   isCLIPVisionModelConfig,
+  isCogView4MainModelModelConfig,
   isControlLayerModelConfig,
   isControlLoRAModelConfig,
   isControlNetModelConfig,
@@ -18,6 +19,7 @@ import {
   isFluxReduxModelConfig,
   isFluxVAEModelConfig,
   isIPAdapterModelConfig,
+  isLLaVAModelConfig,
   isLoRAModelConfig,
   isNonRefinerMainModelConfig,
   isNonSDXLMainModelConfig,
@@ -60,6 +62,7 @@ export const useNonSDXLMainModels = buildModelsHook(isNonSDXLMainModelConfig);
 export const useRefinerModels = buildModelsHook(isRefinerMainModelModelConfig);
 export const useFluxModels = buildModelsHook(isFluxMainModelModelConfig);
 export const useSD3Models = buildModelsHook(isSD3MainModelModelConfig);
+export const useCogView4Models = buildModelsHook(isCogView4MainModelModelConfig);
 export const useSDXLModels = buildModelsHook(isSDXLMainModelModelConfig);
 export const useLoRAModels = buildModelsHook(isLoRAModelConfig);
 export const useControlLoRAModel = buildModelsHook(isControlLoRAModelConfig);
@@ -82,6 +85,7 @@ export const useFluxReduxModels = buildModelsHook(isFluxReduxModelConfig);
 export const useIPAdapterOrFLUXReduxModels = buildModelsHook(
   (config) => isIPAdapterModelConfig(config) || isFluxReduxModelConfig(config)
 );
+export const useLLaVAModels = buildModelsHook(isLLaVAModelConfig);
 
 // const buildModelsSelector =
 //   <T extends AnyModelConfig>(typeGuard: (config: AnyModelConfig) => config is T): Selector<RootState, T[]> =>

@@ -4,7 +4,6 @@ from PIL import Image
 
 from invokeai.app.invocations.baseinvocation import (
     BaseInvocation,
-    Classification,
     InvocationContext,
     invocation,
 )
@@ -58,7 +57,6 @@ class RectangleMaskInvocation(BaseInvocation, WithMetadata):
     tags=["conditioning"],
     category="conditioning",
     version="1.0.0",
-    classification=Classification.Beta,
 )
 class AlphaMaskToTensorInvocation(BaseInvocation):
     """Convert a mask image to a tensor. Opaque regions are 1 and transparent regions are 0."""
@@ -67,7 +65,7 @@ class AlphaMaskToTensorInvocation(BaseInvocation):
     invert: bool = InputField(default=False, description="Whether to invert the mask.")
 
     def invoke(self, context: InvocationContext) -> MaskOutput:
-        image = context.images.get_pil(self.image.image_name)
+        image = context.images.get_pil(self.image.image_name, mode="RGBA")
         mask = torch.zeros((1, image.height, image.width), dtype=torch.bool)
         if self.invert:
             mask[0] = torch.tensor(np.array(image)[:, :, 3] == 0, dtype=torch.bool)
@@ -87,7 +85,6 @@ class AlphaMaskToTensorInvocation(BaseInvocation):
     tags=["conditioning"],
     category="conditioning",
     version="1.1.0",
-    classification=Classification.Beta,
 )
 class InvertTensorMaskInvocation(BaseInvocation):
     """Inverts a tensor mask."""
@@ -234,7 +231,6 @@ WHITE = ColorField(r=255, g=255, b=255, a=255)
     tags=["mask"],
     category="mask",
     version="1.0.0",
-    classification=Classification.Beta,
 )
 class GetMaskBoundingBoxInvocation(BaseInvocation):
     """Gets the bounding box of the given mask image."""

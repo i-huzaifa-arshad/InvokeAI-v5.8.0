@@ -6,6 +6,7 @@ import logging
 from pathlib import Path
 from typing import Optional
 
+import onnxruntime as ort
 import torch
 from diffusers.pipelines.pipeline_utils import DiffusionPipeline
 from diffusers.schedulers.scheduling_utils import SchedulerMixin
@@ -15,7 +16,8 @@ from invokeai.backend.image_util.depth_anything.depth_anything_pipeline import D
 from invokeai.backend.image_util.grounding_dino.grounding_dino_pipeline import GroundingDinoPipeline
 from invokeai.backend.image_util.segment_anything.segment_anything_pipeline import SegmentAnythingPipeline
 from invokeai.backend.ip_adapter.ip_adapter import IPAdapter
-from invokeai.backend.model_manager.config import AnyModel
+from invokeai.backend.llava_onevision_model import LlavaOnevisionModel
+from invokeai.backend.model_manager.taxonomy import AnyModel
 from invokeai.backend.onnx.onnx_runtime import IAIOnnxRuntimeModel
 from invokeai.backend.patches.model_patch_raw import ModelPatchRaw
 from invokeai.backend.sig_lip.sig_lip_pipeline import SigLipPipeline
@@ -50,9 +52,20 @@ def calc_model_size_by_data(logger: logging.Logger, model: AnyModel) -> int:
             SegmentAnythingPipeline,
             DepthAnythingPipeline,
             SigLipPipeline,
+            LlavaOnevisionModel,
         ),
     ):
         return model.calc_size()
+    elif isinstance(model, ort.InferenceSession):
+        if model._model_bytes is not None:
+            # If the model is already loaded, return the size of the model bytes
+            return len(model._model_bytes)
+        elif model._model_path is not None:
+            # If the model is not loaded, return the size of the model path
+            return calc_model_size_by_fs(Path(model._model_path))
+        else:
+            # If neither is available, return 0
+            return 0
     elif isinstance(
         model,
         (

@@ -13,10 +13,11 @@ import { StringGeneratorFieldInputComponent } from 'features/nodes/components/fl
 import { IntegerFieldInput } from 'features/nodes/components/flow/nodes/Invocation/fields/IntegerField/IntegerFieldInput';
 import { IntegerFieldInputAndSlider } from 'features/nodes/components/flow/nodes/Invocation/fields/IntegerField/IntegerFieldInputAndSlider';
 import { IntegerFieldSlider } from 'features/nodes/components/flow/nodes/Invocation/fields/IntegerField/IntegerFieldSlider';
+import { StringFieldDropdown } from 'features/nodes/components/flow/nodes/Invocation/fields/StringField/StringFieldDropdown';
 import { StringFieldInput } from 'features/nodes/components/flow/nodes/Invocation/fields/StringField/StringFieldInput';
 import { StringFieldTextarea } from 'features/nodes/components/flow/nodes/Invocation/fields/StringField/StringFieldTextarea';
 import { useInputFieldInstance } from 'features/nodes/hooks/useInputFieldInstance';
-import { useInputFieldTemplate } from 'features/nodes/hooks/useInputFieldTemplate';
+import { useInputFieldTemplateOrThrow } from 'features/nodes/hooks/useInputFieldTemplateOrThrow';
 import {
   isBoardFieldInputInstance,
   isBoardFieldInputTemplate,
@@ -28,6 +29,8 @@ import {
   isCLIPGEmbedModelFieldInputTemplate,
   isCLIPLEmbedModelFieldInputInstance,
   isCLIPLEmbedModelFieldInputTemplate,
+  isCogView4MainModelFieldInputInstance,
+  isCogView4MainModelFieldInputTemplate,
   isColorFieldInputInstance,
   isColorFieldInputTemplate,
   isControlLoRAModelFieldInputInstance,
@@ -62,6 +65,8 @@ import {
   isIntegerGeneratorFieldInputTemplate,
   isIPAdapterModelFieldInputInstance,
   isIPAdapterModelFieldInputTemplate,
+  isLLaVAModelFieldInputInstance,
+  isLLaVAModelFieldInputTemplate,
   isLoRAModelFieldInputInstance,
   isLoRAModelFieldInputTemplate,
   isMainModelFieldInputInstance,
@@ -103,6 +108,7 @@ import BooleanFieldInputComponent from './inputs/BooleanFieldInputComponent';
 import CLIPEmbedModelFieldInputComponent from './inputs/CLIPEmbedModelFieldInputComponent';
 import CLIPGEmbedModelFieldInputComponent from './inputs/CLIPGEmbedModelFieldInputComponent';
 import CLIPLEmbedModelFieldInputComponent from './inputs/CLIPLEmbedModelFieldInputComponent';
+import CogView4MainModelFieldInputComponent from './inputs/CogView4MainModelFieldInputComponent';
 import ColorFieldInputComponent from './inputs/ColorFieldInputComponent';
 import ControlLoRAModelFieldInputComponent from './inputs/ControlLoraModelFieldInputComponent';
 import ControlNetModelFieldInputComponent from './inputs/ControlNetModelFieldInputComponent';
@@ -112,6 +118,7 @@ import FluxReduxModelFieldInputComponent from './inputs/FluxReduxModelFieldInput
 import FluxVAEModelFieldInputComponent from './inputs/FluxVAEModelFieldInputComponent';
 import ImageFieldInputComponent from './inputs/ImageFieldInputComponent';
 import IPAdapterModelFieldInputComponent from './inputs/IPAdapterModelFieldInputComponent';
+import LLaVAModelFieldInputComponent from './inputs/LLaVAModelFieldInputComponent';
 import LoRAModelFieldInputComponent from './inputs/LoRAModelFieldInputComponent';
 import MainModelFieldInputComponent from './inputs/MainModelFieldInputComponent';
 import RefinerModelFieldInputComponent from './inputs/RefinerModelFieldInputComponent';
@@ -132,7 +139,7 @@ type Props = {
 
 export const InputFieldRenderer = memo(({ nodeId, fieldName, settings }: Props) => {
   const field = useInputFieldInstance(nodeId, fieldName);
-  const template = useInputFieldTemplate(nodeId, fieldName);
+  const template = useInputFieldTemplateOrThrow(nodeId, fieldName);
 
   // When deciding which component to render, first we check the type of the template, which is more efficient than the
   // instance type check. The instance type check uses zod and is slower.
@@ -148,7 +155,7 @@ export const InputFieldRenderer = memo(({ nodeId, fieldName, settings }: Props) 
     if (!isStringFieldInputInstance(field)) {
       return null;
     }
-    if (settings?.type !== 'string-field-config') {
+    if (!settings || settings.type !== 'string-field-config') {
       if (template.ui_component === 'textarea') {
         return <StringFieldTextarea nodeId={nodeId} field={field} fieldTemplate={template} />;
       } else {
@@ -159,8 +166,10 @@ export const InputFieldRenderer = memo(({ nodeId, fieldName, settings }: Props) 
       return <StringFieldInput nodeId={nodeId} field={field} fieldTemplate={template} />;
     } else if (settings.component === 'textarea') {
       return <StringFieldTextarea nodeId={nodeId} field={field} fieldTemplate={template} />;
+    } else if (settings.component === 'dropdown') {
+      return <StringFieldDropdown nodeId={nodeId} field={field} fieldTemplate={template} settings={settings} />;
     } else {
-      assert<Equals<never, typeof settings.component>>(false, 'Unexpected settings.component');
+      assert<Equals<never, typeof settings>>(false, 'Unexpected settings');
     }
   }
 
@@ -322,6 +331,13 @@ export const InputFieldRenderer = memo(({ nodeId, fieldName, settings }: Props) 
     return <ControlLoRAModelFieldInputComponent nodeId={nodeId} field={field} fieldTemplate={template} />;
   }
 
+  if (isLLaVAModelFieldInputTemplate(template)) {
+    if (!isLLaVAModelFieldInputInstance(field)) {
+      return null;
+    }
+    return <LLaVAModelFieldInputComponent nodeId={nodeId} field={field} fieldTemplate={template} />;
+  }
+
   if (isFluxVAEModelFieldInputTemplate(template)) {
     if (!isFluxVAEModelFieldInputInstance(field)) {
       return null;
@@ -397,6 +413,13 @@ export const InputFieldRenderer = memo(({ nodeId, fieldName, settings }: Props) 
       return null;
     }
     return <SD3MainModelFieldInputComponent nodeId={nodeId} field={field} fieldTemplate={template} />;
+  }
+
+  if (isCogView4MainModelFieldInputTemplate(template)) {
+    if (!isCogView4MainModelFieldInputInstance(field)) {
+      return null;
+    }
+    return <CogView4MainModelFieldInputComponent nodeId={nodeId} field={field} fieldTemplate={template} />;
   }
 
   if (isSDXLMainModelFieldInputTemplate(template)) {

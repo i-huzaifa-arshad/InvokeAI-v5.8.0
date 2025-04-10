@@ -1,5 +1,6 @@
 import type { SystemStyleObject } from '@invoke-ai/ui-library';
-import { Box, Flex, FormControl } from '@invoke-ai/ui-library';
+import { Box, Divider, Flex, FormControl } from '@invoke-ai/ui-library';
+import { InputFieldGate } from 'features/nodes/components/flow/nodes/Invocation/fields/InputFieldGate';
 import { InputFieldRenderer } from 'features/nodes/components/flow/nodes/Invocation/fields/InputFieldRenderer';
 import { useContainerContext } from 'features/nodes/components/sidePanel/builder/contexts';
 import { useFormElementDnd } from 'features/nodes/components/sidePanel/builder/dnd-hooks';
@@ -8,9 +9,11 @@ import { FormElementEditModeContent } from 'features/nodes/components/sidePanel/
 import { FormElementEditModeHeader } from 'features/nodes/components/sidePanel/builder/FormElementEditModeHeader';
 import { NodeFieldElementDescriptionEditable } from 'features/nodes/components/sidePanel/builder/NodeFieldElementDescriptionEditable';
 import { NodeFieldElementLabelEditable } from 'features/nodes/components/sidePanel/builder/NodeFieldElementLabelEditable';
+import { NodeFieldElementStringDropdownSettings } from 'features/nodes/components/sidePanel/builder/NodeFieldElementStringDropdownSettings';
 import { useMouseOverFormField, useMouseOverNode } from 'features/nodes/hooks/useMouseOverNode';
 import type { NodeFieldElement } from 'features/nodes/types/workflow';
 import { NODE_FIELD_CLASS_NAME } from 'features/nodes/types/workflow';
+import type { RefObject } from 'react';
 import { memo, useRef } from 'react';
 
 const sx: SystemStyleObject = {
@@ -31,32 +34,60 @@ export const NodeFieldElementEditMode = memo(({ el }: { el: NodeFieldElement }) 
   const dragHandleRef = useRef<HTMLDivElement>(null);
   const [activeDropRegion, isDragging] = useFormElementDnd(el.id, draggableRef, dragHandleRef);
   const containerCtx = useContainerContext();
-  const { id, data } = el;
-  const { fieldIdentifier, showDescription } = data;
+  const { id } = el;
 
   return (
     <Flex ref={draggableRef} id={id} className={NODE_FIELD_CLASS_NAME} sx={sx} data-parent-layout={containerCtx.layout}>
-      <FormElementEditModeHeader dragHandleRef={dragHandleRef} element={el} data-is-dragging={isDragging} />
-      <FormElementEditModeContent data-is-dragging={isDragging} p={4}>
-        <FormControl flex="1 1 0" orientation="vertical">
-          <NodeFieldElementLabelEditable el={el} />
-          <Flex w="full" gap={4}>
-            <InputFieldRenderer
-              nodeId={fieldIdentifier.nodeId}
-              fieldName={fieldIdentifier.fieldName}
-              settings={data.settings}
-            />
-          </Flex>
-          {showDescription && <NodeFieldElementDescriptionEditable el={el} />}
-        </FormControl>
-      </FormElementEditModeContent>
-      <NodeFieldElementOverlay element={el} />
+      <NodeFieldElementEditModeContent dragHandleRef={dragHandleRef} el={el} isDragging={isDragging} />
+      <NodeFieldElementOverlay nodeId={el.data.fieldIdentifier.nodeId} />
       <DndListDropIndicator activeDropRegion={activeDropRegion} gap="var(--invoke-space-4)" />
     </Flex>
   );
 });
 
 NodeFieldElementEditMode.displayName = 'NodeFieldElementEditMode';
+
+const NodeFieldElementEditModeContent = memo(
+  ({
+    el,
+    dragHandleRef,
+    isDragging,
+  }: {
+    el: NodeFieldElement;
+    dragHandleRef: RefObject<HTMLDivElement>;
+    isDragging: boolean;
+  }) => {
+    const { id, data } = el;
+    const { fieldIdentifier, showDescription } = data;
+    return (
+      <>
+        <FormElementEditModeHeader dragHandleRef={dragHandleRef} element={el} data-is-dragging={isDragging} />
+        <FormElementEditModeContent data-is-dragging={isDragging} p={4}>
+          <InputFieldGate nodeId={fieldIdentifier.nodeId} fieldName={fieldIdentifier.fieldName}>
+            <FormControl flex="1 1 0" orientation="vertical">
+              <NodeFieldElementLabelEditable el={el} />
+              <Flex w="full" gap={4}>
+                <InputFieldRenderer
+                  nodeId={fieldIdentifier.nodeId}
+                  fieldName={fieldIdentifier.fieldName}
+                  settings={data.settings}
+                />
+              </Flex>
+              {showDescription && <NodeFieldElementDescriptionEditable el={el} />}
+              {data.settings?.type === 'string-field-config' && data.settings.component === 'dropdown' && (
+                <>
+                  <Divider />
+                  <NodeFieldElementStringDropdownSettings id={id} settings={data.settings} />
+                </>
+              )}
+            </FormControl>
+          </InputFieldGate>
+        </FormElementEditModeContent>
+      </>
+    );
+  }
+);
+NodeFieldElementEditModeContent.displayName = 'NodeFieldElementEditModeContent';
 
 const nodeFieldOverlaySx: SystemStyleObject = {
   position: 'absolute',
@@ -74,9 +105,9 @@ const nodeFieldOverlaySx: SystemStyleObject = {
   },
 };
 
-const NodeFieldElementOverlay = memo(({ element }: { element: NodeFieldElement }) => {
-  const mouseOverNode = useMouseOverNode(element.data.fieldIdentifier.nodeId);
-  const mouseOverFormField = useMouseOverFormField(element.data.fieldIdentifier.nodeId);
+export const NodeFieldElementOverlay = memo(({ nodeId }: { nodeId: string }) => {
+  const mouseOverNode = useMouseOverNode(nodeId);
+  const mouseOverFormField = useMouseOverFormField(nodeId);
 
   return (
     <Box

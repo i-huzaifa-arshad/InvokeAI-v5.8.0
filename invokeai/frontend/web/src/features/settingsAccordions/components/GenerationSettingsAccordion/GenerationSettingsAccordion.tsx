@@ -4,7 +4,7 @@ import { EMPTY_ARRAY } from 'app/store/constants';
 import { createMemoizedSelector } from 'app/store/createMemoizedSelector';
 import { useAppSelector } from 'app/store/storeHooks';
 import { selectLoRAsSlice } from 'features/controlLayers/store/lorasSlice';
-import { selectIsFLUX, selectIsSD3 } from 'features/controlLayers/store/paramsSlice';
+import { selectIsCogView4, selectIsFLUX, selectIsSD3 } from 'features/controlLayers/store/paramsSlice';
 import { LoRAList } from 'features/lora/components/LoRAList';
 import LoRASelect from 'features/lora/components/LoRASelect';
 import ParamCFGScale from 'features/parameters/components/Core/ParamCFGScale';
@@ -22,6 +22,7 @@ import { selectActiveTab } from 'features/ui/store/uiSelectors';
 import { memo, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSelectedModelConfig } from 'services/api/hooks/useSelectedModelConfig';
+import { isFluxFillMainModelModelConfig } from 'services/api/types';
 
 const formLabelProps: FormLabelProps = {
   minW: '4rem',
@@ -33,6 +34,8 @@ export const GenerationSettingsAccordion = memo(() => {
   const activeTabName = useAppSelector(selectActiveTab);
   const isFLUX = useAppSelector(selectIsFLUX);
   const isSD3 = useAppSelector(selectIsSD3);
+  const isCogView4 = useAppSelector(selectIsCogView4);
+
   const isUpscaling = useMemo(() => {
     return activeTabName === 'upscaling';
   }, [activeTabName]);
@@ -80,10 +83,10 @@ export const GenerationSettingsAccordion = memo(() => {
         <Expander label={t('accordions.advanced.options')} isOpen={isOpenExpander} onToggle={onToggleExpander}>
           <Flex gap={4} flexDir="column" pb={4}>
             <FormControlGroup formLabelProps={formLabelProps}>
-              {!isFLUX && !isSD3 && !isUpscaling && <ParamScheduler />}
+              {!isFLUX && !isSD3 && !isCogView4 && !isUpscaling && <ParamScheduler />}
               {isUpscaling && <ParamUpscaleScheduler />}
               <ParamSteps />
-              {isFLUX && <ParamGuidance />}
+              {isFLUX && modelConfig && !isFluxFillMainModelModelConfig(modelConfig) && <ParamGuidance />}
               {isUpscaling && <ParamUpscaleCFGScale />}
               {!isFLUX && !isUpscaling && <ParamCFGScale />}
             </FormControlGroup>

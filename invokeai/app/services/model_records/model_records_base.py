@@ -14,10 +14,12 @@ from invokeai.app.services.shared.pagination import PaginatedResults
 from invokeai.app.util.model_exclude_null import BaseModelExcludeNull
 from invokeai.backend.model_manager.config import (
     AnyModelConfig,
-    BaseModelType,
-    ClipVariantType,
     ControlAdapterDefaultSettings,
     MainModelDefaultSettings,
+)
+from invokeai.backend.model_manager.taxonomy import (
+    BaseModelType,
+    ClipVariantType,
     ModelFormat,
     ModelSourceType,
     ModelType,
@@ -78,6 +80,7 @@ class ModelRecordChanges(BaseModelExcludeNull):
     type: Optional[ModelType] = Field(description="Type of model", default=None)
     key: Optional[str] = Field(description="Database ID for this model", default=None)
     hash: Optional[str] = Field(description="hash of model file", default=None)
+    file_size: Optional[int] = Field(description="Size of model file", default=None)
     format: Optional[str] = Field(description="format of model file", default=None)
     trigger_phrases: Optional[set[str]] = Field(description="Set of trigger phrases for this model", default=None)
     default_settings: Optional[MainModelDefaultSettings | ControlAdapterDefaultSettings] = Field(

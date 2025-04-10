@@ -14,18 +14,15 @@ from invokeai.app.services.model_install import ModelInstallService, ModelInstal
 from invokeai.app.services.model_load import ModelLoadService, ModelLoadServiceBase
 from invokeai.app.services.model_manager import ModelManagerService, ModelManagerServiceBase
 from invokeai.app.services.model_records import ModelRecordServiceBase, ModelRecordServiceSQL
+from invokeai.backend.model_manager import BaseModelType, ModelFormat, ModelType, ModelVariantType
 from invokeai.backend.model_manager.config import (
-    BaseModelType,
     LoRADiffusersConfig,
     MainCheckpointConfig,
     MainDiffusersConfig,
-    ModelFormat,
-    ModelSourceType,
-    ModelType,
-    ModelVariantType,
     VAEDiffusersConfig,
 )
 from invokeai.backend.model_manager.load.model_cache.model_cache import ModelCache
+from invokeai.backend.model_manager.taxonomy import ModelSourceType
 from invokeai.backend.util.devices import TorchDevice
 from invokeai.backend.util.logging import InvokeAILogger
 from tests.backend.model_manager.model_metadata.metadata_examples import (
@@ -143,6 +140,7 @@ def mm2_record_store(mm2_app_config: InvokeAIAppConfig) -> ModelRecordServiceBas
         base=BaseModelType.StableDiffusion2,
         type=ModelType.VAE,
         hash="111222333444",
+        file_size=4096,
         source="stabilityai/sdxl-vae",
         source_type=ModelSourceType.HFRepoID,
     )
@@ -156,6 +154,7 @@ def mm2_record_store(mm2_app_config: InvokeAIAppConfig) -> ModelRecordServiceBas
         config_path="/tmp/foo.yaml",
         variant=ModelVariantType.Normal,
         hash="111222333444",
+        file_size=8192,
         source="https://civitai.com/models/206883/split",
         source_type=ModelSourceType.Url,
     )
@@ -167,6 +166,7 @@ def mm2_record_store(mm2_app_config: InvokeAIAppConfig) -> ModelRecordServiceBas
         base=BaseModelType.StableDiffusionXL,
         type=ModelType.Main,
         hash="111222333444",
+        file_size=8193,
         source="author3/model3",
         description="This is test 3",
         source_type=ModelSourceType.HFRepoID,
@@ -179,6 +179,7 @@ def mm2_record_store(mm2_app_config: InvokeAIAppConfig) -> ModelRecordServiceBas
         base=BaseModelType.StableDiffusionXL,
         type=ModelType.LoRA,
         hash="111222333444",
+        file_size=5000,
         source="author4/model4",
         source_type=ModelSourceType.HFRepoID,
     )
@@ -190,6 +191,7 @@ def mm2_record_store(mm2_app_config: InvokeAIAppConfig) -> ModelRecordServiceBas
         base=BaseModelType.StableDiffusion1,
         type=ModelType.LoRA,
         hash="111222333444",
+        file_size=5001,
         source="author4/model5",
         source_type=ModelSourceType.HFRepoID,
     )

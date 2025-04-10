@@ -5,7 +5,6 @@ import { getPrefixedId } from 'features/controlLayers/konva/util';
 import { selectCanvasSettingsSlice } from 'features/controlLayers/store/canvasSettingsSlice';
 import { selectParamsSlice } from 'features/controlLayers/store/paramsSlice';
 import { selectCanvasMetadata, selectCanvasSlice } from 'features/controlLayers/store/selectors';
-import { fetchModelConfigWithTypeGuard } from 'features/metadata/util/modelFetchingHelpers';
 import { addControlNets, addT2IAdapters } from 'features/nodes/util/graph/generation/addControlAdapters';
 import { addImageToImage } from 'features/nodes/util/graph/generation/addImageToImage';
 import { addInpaint } from 'features/nodes/util/graph/generation/addInpaint';
@@ -24,8 +23,9 @@ import {
   getPresetModifiedPrompts,
   getSizes,
 } from 'features/nodes/util/graph/graphBuilderUtils';
+import type { ImageOutputNodes } from 'features/nodes/util/graph/types';
+import { selectMainModelConfig } from 'services/api/endpoints/models';
 import type { Invocation } from 'services/api/types';
-import { isNonRefinerMainModelConfig } from 'services/api/types';
 import type { Equals } from 'tsafe';
 import { assert } from 'tsafe';
 
@@ -40,6 +40,10 @@ export const buildSDXLGraph = async (
   const generationMode = await manager.compositor.getGenerationMode();
   log.debug({ generationMode }, 'Building SDXL graph');
 
+  const model = selectMainModelConfig(state);
+  assert(model, 'No model found in state');
+  assert(model.base === 'sdxl');
+
   const params = selectParamsSlice(state);
   const canvasSettings = selectCanvasSettingsSlice(state);
   const canvas = selectCanvasSlice(state);
@@ -47,7 +51,6 @@ export const buildSDXLGraph = async (
   const { bbox } = canvas;
 
   const {
-    model,
     cfgScale: cfg_scale,
     cfgRescaleMultiplier: cfg_rescale_multiplier,
     scheduler,
@@ -136,18 +139,14 @@ export const buildSDXLGraph = async (
   g.addEdge(noise, 'noise', denoise, 'noise');
   g.addEdge(denoise, 'latents', l2i, 'latents');
 
-  const modelConfig = await fetchModelConfigWithTypeGuard(model.key, isNonRefinerMainModelConfig);
-  assert(modelConfig.base === 'sdxl');
-
   g.upsertMetadata({
-    generation_mode: 'sdxl_txt2img',
     cfg_scale,
     cfg_rescale_multiplier,
     width: originalSize.width,
     height: originalSize.height,
     positive_prompt: positivePrompt,
     negative_prompt: negativePrompt,
-    model: Graph.getModelMetadataField(modelConfig),
+    model: Graph.getModelMetadataField(model),
     seed,
     steps,
     rand_device: shouldUseCpuNoise ? 'cpu' : 'cuda',
@@ -174,12 +173,11 @@ export const buildSDXLGraph = async (
     ? Math.min(refinerStart, 1 - params.img2imgStrength)
     : 1 - params.img2imgStrength;
 
-  let canvasOutput: Invocation<
-    'l2i' | 'img_nsfw' | 'img_watermark' | 'img_resize' | 'canvas_v2_mask_and_crop' | 'flux_vae_decode' | 'sd3_l2i'
-  > = l2i;
+  let canvasOutput: Invocation<ImageOutputNodes> = l2i;
 
   if (generationMode === 'txt2img') {
     canvasOutput = addTextToImage({ g, l2i, originalSize, scaledSize });
+    g.upsertMetadata({ generation_mode: 'sdxl_txt2img' });
   } else if (generationMode === 'img2img') {
     canvasOutput = await addImageToImage({
       g,
@@ -194,6 +192,7 @@ export const buildSDXLGraph = async (
       denoising_start,
       fp32,
     });
+    g.upsertMetadata({ generation_mode: 'sdxl_img2img' });
   } else if (generationMode === 'inpaint') {
     canvasOutput = await addInpaint({
       state,
@@ -209,6 +208,7 @@ export const buildSDXLGraph = async (
       denoising_start,
       fp32,
     });
+    g.upsertMetadata({ generation_mode: 'sdxl_inpaint' });
   } else if (generationMode === 'outpaint') {
     canvasOutput = await addOutpaint({
       state,
@@ -224,6 +224,7 @@ export const buildSDXLGraph = async (
       denoising_start,
       fp32,
     });
+    g.upsertMetadata({ generation_mode: 'sdxl_outpaint' });
   } else {
     assert<Equals<typeof generationMode, never>>(false);
   }
@@ -238,7 +239,7 @@ export const buildSDXLGraph = async (
     g,
     rect: canvas.bbox.rect,
     collector: controlNetCollector,
-    model: modelConfig,
+    model,
   });
   if (controlNetResult.addedControlNets > 0) {
     g.addEdge(controlNetCollector, 'collection', denoise, 'control');
@@ -256,7 +257,7 @@ export const buildSDXLGraph = async (
     g,
     rect: canvas.bbox.rect,
     collector: t2iAdapterCollector,
-    model: modelConfig,
+    model,
   });
   if (t2iAdapterResult.addedT2IAdapters > 0) {
     g.addEdge(t2iAdapterCollector, 'collection', denoise, 't2i_adapter');
@@ -272,7 +273,7 @@ export const buildSDXLGraph = async (
     entities: canvas.referenceImages.entities,
     g,
     collector: ipAdapterCollect,
-    model: modelConfig,
+    model,
   });
 
   const regionsResult = await addRegions({
@@ -280,7 +281,7 @@ export const buildSDXLGraph = async (
     regions: canvas.regionalGuidance.entities,
     g,
     bbox: canvas.bbox.rect,
-    model: modelConfig,
+    model,
     posCond,
     negCond,
     posCondCollect,

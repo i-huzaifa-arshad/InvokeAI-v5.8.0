@@ -6,7 +6,14 @@ import { selectParamsSlice } from 'features/controlLayers/store/paramsSlice';
 import { selectCanvasSlice } from 'features/controlLayers/store/selectors';
 import type { Dimensions } from 'features/controlLayers/store/types';
 import type { Graph } from 'features/nodes/util/graph/generation/Graph';
-import { getInfill } from 'features/nodes/util/graph/graphBuilderUtils';
+import { getInfill, isMainModelWithoutUnet } from 'features/nodes/util/graph/graphBuilderUtils';
+import type {
+  DenoiseLatentsNodes,
+  ImageToLatentsNodes,
+  LatentToImageNodes,
+  MainModelLoaderNodes,
+  VaeSourceNodes,
+} from 'features/nodes/util/graph/types';
 import { isEqual } from 'lodash-es';
 import type { Invocation } from 'services/api/types';
 
@@ -14,13 +21,11 @@ type AddOutpaintArg = {
   state: RootState;
   g: Graph;
   manager: CanvasManager;
-  l2i: Invocation<'l2i' | 'flux_vae_decode' | 'sd3_l2i'>;
-  i2lNodeType: 'i2l' | 'flux_vae_encode' | 'sd3_i2l';
-  denoise: Invocation<'denoise_latents' | 'flux_denoise' | 'sd3_denoise'>;
-  vaeSource: Invocation<
-    'main_model_loader' | 'sdxl_model_loader' | 'flux_model_loader' | 'seamless' | 'vae_loader' | 'sd3_model_loader'
-  >;
-  modelLoader: Invocation<'main_model_loader' | 'sdxl_model_loader' | 'flux_model_loader' | 'sd3_model_loader'>;
+  l2i: Invocation<LatentToImageNodes>;
+  i2lNodeType: ImageToLatentsNodes;
+  denoise: Invocation<DenoiseLatentsNodes>;
+  vaeSource: Invocation<VaeSourceNodes | MainModelLoaderNodes>;
+  modelLoader: Invocation<MainModelLoaderNodes>;
   originalSize: Dimensions;
   scaledSize: Dimensions;
   denoising_start: number;
@@ -40,7 +45,7 @@ export const addOutpaint = async ({
   scaledSize,
   denoising_start,
   fp32,
-}: AddOutpaintArg): Promise<Invocation<'canvas_v2_mask_and_crop' | 'img_resize'>> => {
+}: AddOutpaintArg): Promise<Invocation<'invokeai_img_blend' | 'apply_mask_to_image'>> => {
   denoise.denoising_start = denoising_start;
 
   const params = selectParamsSlice(state);
@@ -63,7 +68,9 @@ export const addOutpaint = async ({
 
   const infill = getInfill(g, params);
 
-  if (!isEqual(scaledSize, originalSize)) {
+  const needsScaleBeforeProcessing = !isEqual(scaledSize, originalSize);
+
+  if (needsScaleBeforeProcessing) {
     // Scale before processing requires some resizing
 
     // Combine the inpaint mask and the initial image's alpha channel into a single mask
@@ -114,7 +121,7 @@ export const addOutpaint = async ({
     g.addEdge(infill, 'image', createGradientMask, 'image');
     g.addEdge(resizeInputMaskToScaledSize, 'image', createGradientMask, 'mask');
     g.addEdge(vaeSource, 'vae', createGradientMask, 'vae');
-    if (modelLoader.type !== 'flux_model_loader' && modelLoader.type !== 'sd3_model_loader') {
+    if (!isMainModelWithoutUnet(modelLoader)) {
       g.addEdge(modelLoader, 'unet', createGradientMask, 'unet');
     }
 
@@ -142,29 +149,39 @@ export const addOutpaint = async ({
       type: 'img_resize',
       ...originalSize,
     });
-    const canvasPasteBack = g.addNode({
-      id: getPrefixedId('canvas_v2_mask_and_crop'),
-      type: 'canvas_v2_mask_and_crop',
-      mask_blur: params.maskBlur,
+    const expandMask = g.addNode({
+      type: 'expand_mask_with_fade',
+      id: getPrefixedId('expand_mask_with_fade'),
+      fade_size_px: params.maskBlur,
     });
-
     // Resize initial image and mask to scaled size, feed into to gradient mask
 
     // After denoising, resize the image and mask back to original size
     g.addEdge(l2i, 'image', resizeOutputImageToOriginalSize, 'image');
-    g.addEdge(createGradientMask, 'expanded_mask_area', resizeOutputMaskToOriginalSize, 'image');
-
-    // Finally, paste the generated masked image back onto the original image
-    g.addEdge(resizeOutputImageToOriginalSize, 'image', canvasPasteBack, 'generated_image');
-    g.addEdge(resizeOutputMaskToOriginalSize, 'image', canvasPasteBack, 'mask');
-
+    g.addEdge(createGradientMask, 'expanded_mask_area', expandMask, 'mask');
+    g.addEdge(expandMask, 'image', resizeOutputMaskToOriginalSize, 'image');
     // Do the paste back if we are sending to gallery (in which case we want to see the full image), or if we are sending
     // to canvas but not outputting only masked regions
     if (!canvasSettings.sendToCanvas || !canvasSettings.outputOnlyMaskedRegions) {
-      canvasPasteBack.source_image = { image_name: initialImage.image_name };
+      const imageLayerBlend = g.addNode({
+        type: 'invokeai_img_blend',
+        id: getPrefixedId('image_layer_blend'),
+        layer_base: { image_name: initialImage.image_name },
+      });
+      g.addEdge(resizeOutputImageToOriginalSize, 'image', imageLayerBlend, 'layer_upper');
+      g.addEdge(resizeOutputMaskToOriginalSize, 'image', imageLayerBlend, 'mask');
+      return imageLayerBlend;
+    } else {
+      // Otherwise, just apply the mask
+      const applyMaskToImage = g.addNode({
+        type: 'apply_mask_to_image',
+        id: getPrefixedId('apply_mask_to_image'),
+        invert_mask: true,
+      });
+      g.addEdge(resizeOutputMaskToOriginalSize, 'image', applyMaskToImage, 'mask');
+      g.addEdge(resizeOutputImageToOriginalSize, 'image', applyMaskToImage, 'image');
+      return applyMaskToImage;
     }
-
-    return canvasPasteBack;
   } else {
     infill.image = { image_name: initialImage.image_name };
     // No scale before processing, much simpler
@@ -197,11 +214,6 @@ export const addOutpaint = async ({
       fp32,
       image: { image_name: initialImage.image_name },
     });
-    const canvasPasteBack = g.addNode({
-      id: getPrefixedId('canvas_v2_mask_and_crop'),
-      type: 'canvas_v2_mask_and_crop',
-      mask_blur: params.maskBlur,
-    });
     g.addEdge(maskAlphaToMask, 'image', maskCombine, 'mask1');
     g.addEdge(initialImageAlphaToMask, 'image', maskCombine, 'mask2');
     g.addEdge(maskCombine, 'image', createGradientMask, 'mask');
@@ -209,20 +221,40 @@ export const addOutpaint = async ({
     g.addEdge(i2l, 'latents', denoise, 'latents');
     g.addEdge(vaeSource, 'vae', i2l, 'vae');
     g.addEdge(vaeSource, 'vae', createGradientMask, 'vae');
-    if (modelLoader.type !== 'flux_model_loader' && modelLoader.type !== 'sd3_model_loader') {
+    if (!isMainModelWithoutUnet(modelLoader)) {
       g.addEdge(modelLoader, 'unet', createGradientMask, 'unet');
     }
 
     g.addEdge(createGradientMask, 'denoise_mask', denoise, 'denoise_mask');
-    g.addEdge(createGradientMask, 'expanded_mask_area', canvasPasteBack, 'mask');
-    g.addEdge(l2i, 'image', canvasPasteBack, 'generated_image');
+
+    const expandMask = g.addNode({
+      type: 'expand_mask_with_fade',
+      id: getPrefixedId('expand_mask_with_fade'),
+      fade_size_px: params.maskBlur,
+    });
+    g.addEdge(createGradientMask, 'expanded_mask_area', expandMask, 'mask');
 
     // Do the paste back if we are sending to gallery (in which case we want to see the full image), or if we are sending
     // to canvas but not outputting only masked regions
     if (!canvasSettings.sendToCanvas || !canvasSettings.outputOnlyMaskedRegions) {
-      canvasPasteBack.source_image = { image_name: initialImage.image_name };
+      const imageLayerBlend = g.addNode({
+        type: 'invokeai_img_blend',
+        id: getPrefixedId('image_layer_blend'),
+        layer_base: { image_name: initialImage.image_name },
+      });
+      g.addEdge(l2i, 'image', imageLayerBlend, 'layer_upper');
+      g.addEdge(expandMask, 'image', imageLayerBlend, 'mask');
+      return imageLayerBlend;
+    } else {
+      // Otherwise, just apply the mask
+      const applyMaskToImage = g.addNode({
+        type: 'apply_mask_to_image',
+        id: getPrefixedId('apply_mask_to_image'),
+        invert_mask: true,
+      });
+      g.addEdge(expandMask, 'image', applyMaskToImage, 'mask');
+      g.addEdge(l2i, 'image', applyMaskToImage, 'image');
+      return applyMaskToImage;
     }
-
-    return canvasPasteBack;
   }
 };

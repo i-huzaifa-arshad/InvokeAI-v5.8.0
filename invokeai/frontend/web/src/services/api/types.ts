@@ -20,7 +20,7 @@ export type UpdateBoardArg = paths['/api/v1/boards/{board_id}']['patch']['parame
 export type GraphAndWorkflowResponse =
   paths['/api/v1/images/i/{image_name}/workflow']['get']['responses']['200']['content']['application/json'];
 
-export type BatchConfig =
+export type EnqueueBatchArg =
   paths['/api/v1/queue/{queue_id}/enqueue_batch']['post']['requestBody']['content']['application/json'];
 
 export type InputFieldJSONSchemaExtra = S['InputFieldJSONSchemaExtra'];
@@ -52,9 +52,10 @@ export type VAEModelConfig = S['VAECheckpointConfig'] | S['VAEDiffusersConfig'];
 export type ControlNetModelConfig = S['ControlNetDiffusersConfig'] | S['ControlNetCheckpointConfig'];
 export type IPAdapterModelConfig = S['IPAdapterInvokeAIConfig'] | S['IPAdapterCheckpointConfig'];
 export type T2IAdapterModelConfig = S['T2IAdapterConfig'];
-export type CLIPEmbedModelConfig = S['CLIPEmbedDiffusersConfig'];
 export type CLIPLEmbedModelConfig = S['CLIPLEmbedDiffusersConfig'];
 export type CLIPGEmbedModelConfig = S['CLIPGEmbedDiffusersConfig'];
+export type CLIPEmbedModelConfig = CLIPLEmbedModelConfig | CLIPGEmbedModelConfig;
+export type LlavaOnevisionConfig = S['LlavaOnevisionConfig'];
 export type T5EncoderModelConfig = S['T5EncoderConfig'];
 export type T5EncoderBnbQuantizedLlmInt8bModelConfig = S['T5EncoderBnbQuantizedLlmInt8bConfig'];
 export type SpandrelImageToImageModelConfig = S['SpandrelImageToImageConfig'];
@@ -80,7 +81,8 @@ export type AnyModelConfig =
   | MainModelConfig
   | CLIPVisionDiffusersConfig
   | SigLipModelConfig
-  | FLUXReduxModelConfig;
+  | FLUXReduxModelConfig
+  | LlavaOnevisionConfig;
 
 /**
  * Checks if a list of submodels contains any that match a given variant or type
@@ -163,6 +165,10 @@ export const isCLIPVisionModelConfig = (config: AnyModelConfig): config is CLIPV
   return config.type === 'clip_vision';
 };
 
+export const isLLaVAModelConfig = (config: AnyModelConfig): config is LlavaOnevisionConfig => {
+  return config.type === 'llava_onevision';
+};
+
 export const isT2IAdapterModelConfig = (config: AnyModelConfig): config is T2IAdapterModelConfig => {
   return config.type === 't2i_adapter';
 };
@@ -241,8 +247,16 @@ export const isSD3MainModelModelConfig = (config: AnyModelConfig): config is Mai
   return config.type === 'main' && config.base === 'sd-3';
 };
 
+export const isCogView4MainModelModelConfig = (config: AnyModelConfig): config is MainModelConfig => {
+  return config.type === 'main' && config.base === 'cogview4';
+};
+
 export const isFluxMainModelModelConfig = (config: AnyModelConfig): config is MainModelConfig => {
   return config.type === 'main' && config.base === 'flux';
+};
+
+export const isFluxFillMainModelModelConfig = (config: AnyModelConfig): config is MainModelConfig => {
+  return config.type === 'main' && config.base === 'flux' && config.variant === 'inpaint';
 };
 
 export const isNonSDXLMainModelConfig = (config: AnyModelConfig): config is MainModelConfig => {
@@ -344,3 +358,6 @@ export type UploadImageArg = {
    */
   isFirstUploadOfBatch?: boolean;
 };
+
+export type ImageUploadEntryResponse = S['ImageUploadEntry'];
+export type ImageUploadEntryRequest = paths['/api/v1/images/']['post']['requestBody']['content']['application/json'];

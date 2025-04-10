@@ -1,9 +1,8 @@
 import { ConfirmationAlertDialog, Flex, Text } from '@invoke-ai/ui-library';
 import { useStore } from '@nanostores/react';
-import { useAppSelector } from 'app/store/storeHooks';
 import { useAssertSingleton } from 'common/hooks/useAssertSingleton';
+import { useDoesWorkflowHaveUnsavedChanges } from 'features/nodes/components/sidePanel/workflow/IsolatedWorkflowBuilderWatcher';
 import { useWorkflowLibraryModal } from 'features/nodes/store/workflowLibraryModal';
-import { selectWorkflowIsTouched } from 'features/nodes/store/workflowSlice';
 import type { WorkflowV3 } from 'features/nodes/types/workflow';
 import { useLoadWorkflowFromFile } from 'features/workflowLibrary/hooks/useLoadWorkflowFromFile';
 import { useLoadWorkflowFromImage } from 'features/workflowLibrary/hooks/useLoadWorkflowFromImage';
@@ -13,28 +12,28 @@ import { atom } from 'nanostores';
 import { memo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 
-type Callbacks = {
+type LoadWorkflowOptions = {
   onSuccess?: (workflow: WorkflowV3) => void;
   onError?: () => void;
   onCompleted?: () => void;
 };
 
-type LoadLibraryWorkflowData = Callbacks & {
+type LoadLibraryWorkflowData = LoadWorkflowOptions & {
   type: 'library';
   data: string;
 };
 
-type LoadWorkflowFromObjectData = Callbacks & {
+type LoadWorkflowFromObjectData = LoadWorkflowOptions & {
   type: 'object';
   data: unknown;
 };
 
-type LoadWorkflowFromFileData = Callbacks & {
+type LoadWorkflowFromFileData = LoadWorkflowOptions & {
   type: 'file';
   data: File;
 };
 
-type LoadWorkflowFromImageData = Callbacks & {
+type LoadWorkflowFromImageData = LoadWorkflowOptions & {
   type: 'image';
   data: string;
 };
@@ -97,7 +96,7 @@ const useLoadImmediate = () => {
  * before loading the workflow.
  */
 export const useLoadWorkflowWithDialog = () => {
-  const isTouched = useAppSelector(selectWorkflowIsTouched);
+  const doesWorkflowHaveUnsavedChanges = useDoesWorkflowHaveUnsavedChanges();
   const loadImmediate = useLoadImmediate();
 
   const loadWorkflowWithDialog = useCallback(
@@ -116,14 +115,14 @@ export const useLoadWorkflowWithDialog = () => {
     (
       data: LoadLibraryWorkflowData | LoadWorkflowFromObjectData | LoadWorkflowFromFileData | LoadWorkflowFromImageData
     ) => {
-      if (!isTouched) {
+      if (!doesWorkflowHaveUnsavedChanges) {
         $dialogState.set({ ...data, isOpen: false });
         loadImmediate();
       } else {
         $dialogState.set({ ...data, isOpen: true });
       }
     },
-    [loadImmediate, isTouched]
+    [doesWorkflowHaveUnsavedChanges, loadImmediate]
   );
 
   return loadWorkflowWithDialog;

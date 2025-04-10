@@ -5,7 +5,6 @@ import { getPrefixedId } from 'features/controlLayers/konva/util';
 import { selectCanvasSettingsSlice } from 'features/controlLayers/store/canvasSettingsSlice';
 import { selectParamsSlice } from 'features/controlLayers/store/paramsSlice';
 import { selectCanvasMetadata, selectCanvasSlice } from 'features/controlLayers/store/selectors';
-import { fetchModelConfigWithTypeGuard } from 'features/metadata/util/modelFetchingHelpers';
 import { addImageToImage } from 'features/nodes/util/graph/generation/addImageToImage';
 import { addInpaint } from 'features/nodes/util/graph/generation/addInpaint';
 import { addNSFWChecker } from 'features/nodes/util/graph/generation/addNSFWChecker';
@@ -19,8 +18,9 @@ import {
   getPresetModifiedPrompts,
   getSizes,
 } from 'features/nodes/util/graph/graphBuilderUtils';
+import type { ImageOutputNodes } from 'features/nodes/util/graph/types';
+import { selectMainModelConfig } from 'services/api/endpoints/models';
 import type { Invocation } from 'services/api/types';
-import { isNonRefinerMainModelConfig } from 'services/api/types';
 import type { Equals } from 'tsafe';
 import { assert } from 'tsafe';
 
@@ -33,6 +33,10 @@ export const buildSD3Graph = async (
   const generationMode = await manager.compositor.getGenerationMode();
   log.debug({ generationMode }, 'Building SD3 graph');
 
+  const model = selectMainModelConfig(state);
+  assert(model, 'No model found in state');
+  assert(model.base === 'sd-3');
+
   const params = selectParamsSlice(state);
   const canvasSettings = selectCanvasSettingsSlice(state);
   const canvas = selectCanvasSlice(state);
@@ -40,7 +44,6 @@ export const buildSD3Graph = async (
   const { bbox } = canvas;
 
   const {
-    model,
     cfgScale: cfg_scale,
     seed,
     steps,
@@ -51,8 +54,6 @@ export const buildSD3Graph = async (
     optimizedDenoisingEnabled,
     img2imgStrength,
   } = params;
-
-  assert(model, 'No model found in state');
 
   const { originalSize, scaledSize } = getSizes(bbox);
   const { positivePrompt, negativePrompt } = getPresetModifiedPrompts(state);
@@ -107,17 +108,13 @@ export const buildSD3Graph = async (
 
   g.addEdge(denoise, 'latents', l2i, 'latents');
 
-  const modelConfig = await fetchModelConfigWithTypeGuard(model.key, isNonRefinerMainModelConfig);
-  assert(modelConfig.base === 'sd-3');
-
   g.upsertMetadata({
-    generation_mode: 'sd3_txt2img',
     cfg_scale,
     width: originalSize.width,
     height: originalSize.height,
     positive_prompt: positivePrompt,
     negative_prompt: negativePrompt,
-    model: Graph.getModelMetadataField(modelConfig),
+    model: Graph.getModelMetadataField(model),
     seed,
     steps,
     vae: vae ?? undefined,
@@ -134,12 +131,11 @@ export const buildSD3Graph = async (
     denoising_start = 1 - img2imgStrength;
   }
 
-  let canvasOutput: Invocation<
-    'l2i' | 'img_nsfw' | 'img_watermark' | 'img_resize' | 'canvas_v2_mask_and_crop' | 'flux_vae_decode' | 'sd3_l2i'
-  > = l2i;
+  let canvasOutput: Invocation<ImageOutputNodes> = l2i;
 
   if (generationMode === 'txt2img') {
     canvasOutput = addTextToImage({ g, l2i, originalSize, scaledSize });
+    g.upsertMetadata({ generation_mode: 'sd3_txt2img' });
   } else if (generationMode === 'img2img') {
     canvasOutput = await addImageToImage({
       g,
@@ -154,6 +150,7 @@ export const buildSD3Graph = async (
       denoising_start,
       fp32: false,
     });
+    g.upsertMetadata({ generation_mode: 'sd3_img2img' });
   } else if (generationMode === 'inpaint') {
     canvasOutput = await addInpaint({
       state,
@@ -169,6 +166,7 @@ export const buildSD3Graph = async (
       denoising_start,
       fp32: false,
     });
+    g.upsertMetadata({ generation_mode: 'sd3_inpaint' });
   } else if (generationMode === 'outpaint') {
     canvasOutput = await addOutpaint({
       state,
@@ -184,6 +182,7 @@ export const buildSD3Graph = async (
       denoising_start,
       fp32: false,
     });
+    g.upsertMetadata({ generation_mode: 'sd3_outpaint' });
   } else {
     assert<Equals<typeof generationMode, never>>(false);
   }

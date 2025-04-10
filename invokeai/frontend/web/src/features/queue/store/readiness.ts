@@ -22,6 +22,7 @@ import {
 import type { DynamicPromptsState } from 'features/dynamicPrompts/store/dynamicPromptsSlice';
 import { selectDynamicPromptsSlice } from 'features/dynamicPrompts/store/dynamicPromptsSlice';
 import { getShouldProcessPrompt } from 'features/dynamicPrompts/util/getShouldProcessPrompt';
+import { $isInPublishFlow } from 'features/nodes/components/sidePanel/workflow/publish';
 import { $templates } from 'features/nodes/store/nodesSlice';
 import { selectNodesSlice } from 'features/nodes/store/selectors';
 import type { NodesState, Templates } from 'features/nodes/store/types';
@@ -32,6 +33,7 @@ import { isBatchNode, isExecutableNode, isInvocationNode } from 'features/nodes/
 import { resolveBatchValue } from 'features/nodes/util/node/resolveBatchValue';
 import type { UpscaleState } from 'features/parameters/store/upscaleSlice';
 import { selectUpscaleSlice } from 'features/parameters/store/upscaleSlice';
+import { getGridSize } from 'features/parameters/util/optimalDimension';
 import { selectConfigSlice } from 'features/system/store/configSlice';
 import { selectActiveTab } from 'features/ui/store/uiSelectors';
 import type { TabName } from 'features/ui/store/uiTypes';
@@ -39,6 +41,8 @@ import i18n from 'i18next';
 import { debounce, groupBy, upperFirst } from 'lodash-es';
 import { atom, computed } from 'nanostores';
 import { useEffect } from 'react';
+import { selectMainModelConfig } from 'services/api/endpoints/models';
+import type { MainModelConfig } from 'services/api/types';
 import { $isConnected } from 'services/events/stores';
 
 /**
@@ -82,11 +86,14 @@ const debouncedUpdateReasons = debounce(
     templates: Templates,
     upscale: UpscaleState,
     config: AppConfig,
-    store: AppStore
+    store: AppStore,
+    isInPublishFlow: boolean
   ) => {
     if (tab === 'canvas') {
+      const model = selectMainModelConfig(store.getState());
       const reasons = await getReasonsWhyCannotEnqueueCanvasTab({
         isConnected,
+        model,
         canvas,
         params,
         dynamicPrompts,
@@ -104,6 +111,7 @@ const debouncedUpdateReasons = debounce(
         workflowSettingsState: workflowSettings,
         isConnected,
         templates,
+        isInPublishFlow,
       });
       $reasonsWhyCannotEnqueue.set(reasons);
     } else if (tab === 'upscaling') {
@@ -140,6 +148,7 @@ export const useReadinessWatcher = () => {
   const canvasIsRasterizing = useStore(canvasManager?.stateApi.$isRasterizing ?? $true);
   const canvasIsSelectingObject = useStore(canvasManager?.stateApi.$isSegmenting ?? $true);
   const canvasIsCompositing = useStore(canvasManager?.compositor.$isBusy ?? $true);
+  const isInPublishFlow = useStore($isInPublishFlow);
 
   useEffect(() => {
     debouncedUpdateReasons(
@@ -158,7 +167,8 @@ export const useReadinessWatcher = () => {
       templates,
       upscale,
       config,
-      store
+      store,
+      isInPublishFlow
     );
   }, [
     store,
@@ -177,6 +187,7 @@ export const useReadinessWatcher = () => {
     templates,
     upscale,
     workflowSettings,
+    isInPublishFlow,
   ]);
 };
 
@@ -188,15 +199,16 @@ const getReasonsWhyCannotEnqueueWorkflowsTab = async (arg: {
   workflowSettingsState: WorkflowSettingsState;
   isConnected: boolean;
   templates: Templates;
+  isInPublishFlow: boolean;
 }): Promise<Reason[]> => {
-  const { dispatch, nodesState, workflowSettingsState, isConnected, templates } = arg;
+  const { dispatch, nodesState, workflowSettingsState, isConnected, templates, isInPublishFlow } = arg;
   const reasons: Reason[] = [];
 
   if (!isConnected) {
     reasons.push(disconnectedReason(i18n.t));
   }
 
-  if (workflowSettingsState.shouldValidateGraph) {
+  if (workflowSettingsState.shouldValidateGraph || isInPublishFlow) {
     const { nodes, edges } = nodesState;
     const invocationNodes = nodes.filter(isInvocationNode);
     const batchNodes = invocationNodes.filter(isBatchNode);
@@ -314,6 +326,7 @@ const getReasonsWhyCannotEnqueueUpscaleTab = (arg: {
 
 const getReasonsWhyCannotEnqueueCanvasTab = (arg: {
   isConnected: boolean;
+  model: MainModelConfig | null | undefined;
   canvas: CanvasState;
   params: ParamsState;
   dynamicPrompts: DynamicPromptsState;
@@ -325,6 +338,7 @@ const getReasonsWhyCannotEnqueueCanvasTab = (arg: {
 }) => {
   const {
     isConnected,
+    model,
     canvas,
     params,
     dynamicPrompts,
@@ -334,7 +348,7 @@ const getReasonsWhyCannotEnqueueCanvasTab = (arg: {
     canvasIsCompositing,
     canvasIsSelectingObject,
   } = arg;
-  const { model, positivePrompt } = params;
+  const { positivePrompt } = params;
   const reasons: Reason[] = [];
 
   if (!isConnected) {
@@ -366,8 +380,6 @@ const getReasonsWhyCannotEnqueueCanvasTab = (arg: {
   }
 
   if (model?.base === 'flux') {
-    const { bbox } = canvas;
-
     if (!params.t5EncoderModel) {
       reasons.push({ content: i18n.t('parameters.invoke.noT5EncoderModelSelected') });
     }
@@ -377,29 +389,90 @@ const getReasonsWhyCannotEnqueueCanvasTab = (arg: {
     if (!params.fluxVAE) {
       reasons.push({ content: i18n.t('parameters.invoke.noFLUXVAEModelSelected') });
     }
+
+    const { bbox } = canvas;
+    const gridSize = getGridSize('flux');
+
     if (bbox.scaleMethod === 'none') {
-      if (bbox.rect.width % 16 !== 0) {
+      if (bbox.rect.width % gridSize !== 0) {
         reasons.push({
-          content: i18n.t('parameters.invoke.fluxModelIncompatibleBboxWidth', { width: bbox.rect.width }),
-        });
-      }
-      if (bbox.rect.height % 16 !== 0) {
-        reasons.push({
-          content: i18n.t('parameters.invoke.fluxModelIncompatibleBboxHeight', { height: bbox.rect.height }),
-        });
-      }
-    } else {
-      if (bbox.scaledSize.width % 16 !== 0) {
-        reasons.push({
-          content: i18n.t('parameters.invoke.fluxModelIncompatibleScaledBboxWidth', {
-            width: bbox.scaledSize.width,
+          content: i18n.t('parameters.invoke.modelIncompatibleBboxWidth', {
+            model: 'FLUX',
+            width: bbox.rect.width,
+            multiple: gridSize,
           }),
         });
       }
-      if (bbox.scaledSize.height % 16 !== 0) {
+      if (bbox.rect.height % gridSize !== 0) {
         reasons.push({
-          content: i18n.t('parameters.invoke.fluxModelIncompatibleScaledBboxHeight', {
+          content: i18n.t('parameters.invoke.modelIncompatibleBboxHeight', {
+            model: 'FLUX',
+            height: bbox.rect.height,
+            multiple: gridSize,
+          }),
+        });
+      }
+    } else {
+      if (bbox.scaledSize.width % gridSize !== 0) {
+        reasons.push({
+          content: i18n.t('parameters.invoke.modelIncompatibleScaledBboxWidth', {
+            model: 'FLUX',
+            width: bbox.scaledSize.width,
+            multiple: gridSize,
+          }),
+        });
+      }
+      if (bbox.scaledSize.height % gridSize !== 0) {
+        reasons.push({
+          content: i18n.t('parameters.invoke.modelIncompatibleScaledBboxHeight', {
+            model: 'FLUX',
             height: bbox.scaledSize.height,
+            multiple: gridSize,
+          }),
+        });
+      }
+    }
+  }
+
+  if (model?.base === 'cogview4') {
+    const { bbox } = canvas;
+    const gridSize = getGridSize('cogview4');
+
+    if (bbox.scaleMethod === 'none') {
+      if (bbox.rect.width % gridSize !== 0) {
+        reasons.push({
+          content: i18n.t('parameters.invoke.modelIncompatibleBboxWidth', {
+            model: 'CogView4',
+            width: bbox.rect.width,
+            multiple: gridSize,
+          }),
+        });
+      }
+      if (bbox.rect.height % gridSize !== 0) {
+        reasons.push({
+          content: i18n.t('parameters.invoke.modelIncompatibleBboxHeight', {
+            model: 'CogView4',
+            height: bbox.rect.height,
+            multiple: gridSize,
+          }),
+        });
+      }
+    } else {
+      if (bbox.scaledSize.width % gridSize !== 0) {
+        reasons.push({
+          content: i18n.t('parameters.invoke.modelIncompatibleScaledBboxWidth', {
+            model: 'CogView4',
+            width: bbox.scaledSize.width,
+            multiple: gridSize,
+          }),
+        });
+      }
+      if (bbox.scaledSize.height % gridSize !== 0) {
+        reasons.push({
+          content: i18n.t('parameters.invoke.modelIncompatibleScaledBboxHeight', {
+            model: 'CogView4',
+            height: bbox.scaledSize.height,
+            multiple: gridSize,
           }),
         });
       }

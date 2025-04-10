@@ -1,11 +1,12 @@
+import { createAction } from '@reduxjs/toolkit';
 import { logger } from 'app/logging/logger';
-import { enqueueRequested } from 'app/store/actions';
 import type { AppStartListening } from 'app/store/middleware/listenerMiddleware';
 import { extractMessageFromAssertionError } from 'common/util/extractMessageFromAssertionError';
 import { withResult, withResultAsync } from 'common/util/result';
 import { parseify } from 'common/util/serialize';
 import { $canvasManager } from 'features/controlLayers/store/ephemeral';
 import { prepareLinearUIBatch } from 'features/nodes/util/graph/buildLinearBatchConfig';
+import { buildCogView4Graph } from 'features/nodes/util/graph/generation/buildCogView4Graph';
 import { buildFLUXGraph } from 'features/nodes/util/graph/generation/buildFLUXGraph';
 import { buildSD1Graph } from 'features/nodes/util/graph/generation/buildSD1Graph';
 import { buildSD3Graph } from 'features/nodes/util/graph/generation/buildSD3Graph';
@@ -17,10 +18,11 @@ import { assert, AssertionError } from 'tsafe';
 
 const log = logger('generation');
 
+export const enqueueRequestedCanvas = createAction<{ prepend: boolean }>('app/enqueueRequestedCanvas');
+
 export const addEnqueueRequestedLinear = (startAppListening: AppStartListening) => {
   startAppListening({
-    predicate: (action): action is ReturnType<typeof enqueueRequested> =>
-      enqueueRequested.match(action) && action.payload.tabName === 'canvas',
+    actionCreator: enqueueRequestedCanvas,
     effect: async (action, { getState, dispatch }) => {
       log.debug('Enqueue requested');
       const state = getState();
@@ -44,6 +46,8 @@ export const addEnqueueRequestedLinear = (startAppListening: AppStartListening) 
             return await buildSD3Graph(state, manager);
           case `flux`:
             return await buildFLUXGraph(state, manager);
+          case 'cogview4':
+            return await buildCogView4Graph(state, manager);
           default:
             assert(false, `No graph builders for base ${base}`);
         }

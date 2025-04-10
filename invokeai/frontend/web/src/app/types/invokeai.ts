@@ -27,7 +27,8 @@ export type AppFeature =
   | 'bulkDownload'
   | 'starterModels'
   | 'hfToken'
-  | 'retryQueueItem';
+  | 'retryQueueItem'
+  | 'cancelAndClearAll';
 /**
  * A disable-able Stable Diffusion feature
  */
@@ -72,6 +73,8 @@ export type AppConfig = {
   maxUpscaleDimension?: number;
   allowPrivateBoards: boolean;
   allowPrivateStylePresets: boolean;
+  allowClientSideUpload: boolean;
+  allowPublishWorkflows: boolean;
   disabledTabs: TabName[];
   disabledFeatures: AppFeature[];
   disabledSDFeatures: SDFeature[];
@@ -80,7 +83,6 @@ export type AppConfig = {
   metadataFetchDebounce?: number;
   workflowFetchDebounce?: number;
   isLocal?: boolean;
-  maxImageUploadCount?: number;
   sd: {
     defaultModel?: string;
     disabledControlNetModels: string[];

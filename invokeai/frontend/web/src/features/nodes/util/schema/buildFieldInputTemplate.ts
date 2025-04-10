@@ -5,6 +5,7 @@ import type {
   CLIPEmbedModelFieldInputTemplate,
   CLIPGEmbedModelFieldInputTemplate,
   CLIPLEmbedModelFieldInputTemplate,
+  CogView4MainModelFieldInputTemplate,
   ColorFieldInputTemplate,
   ControlLoRAModelFieldInputTemplate,
   ControlNetModelFieldInputTemplate,
@@ -24,6 +25,7 @@ import type {
   IntegerFieldInputTemplate,
   IntegerGeneratorFieldInputTemplate,
   IPAdapterModelFieldInputTemplate,
+  LLaVAModelFieldInputTemplate,
   LoRAModelFieldInputTemplate,
   MainModelFieldInputTemplate,
   ModelIdentifierFieldInputTemplate,
@@ -350,6 +352,20 @@ const buildSD3MainModelFieldInputTemplate: FieldInputTemplateBuilder<SD3MainMode
   return template;
 };
 
+const buildCogView4MainModelFieldInputTemplate: FieldInputTemplateBuilder<CogView4MainModelFieldInputTemplate> = ({
+  schemaObject,
+  baseField,
+  fieldType,
+}) => {
+  const template: CogView4MainModelFieldInputTemplate = {
+    ...baseField,
+    type: fieldType,
+    default: schemaObject.default ?? undefined,
+  };
+
+  return template;
+};
+
 const buildRefinerModelFieldInputTemplate: FieldInputTemplateBuilder<SDXLRefinerModelFieldInputTemplate> = ({
   schemaObject,
   baseField,
@@ -445,6 +461,19 @@ const buildControlLoRAModelFieldInputTemplate: FieldInputTemplateBuilder<Control
     default: schemaObject.default ?? undefined,
   };
 
+  return template;
+};
+
+const buildLLaVAModelFieldInputTemplate: FieldInputTemplateBuilder<LLaVAModelFieldInputTemplate> = ({
+  schemaObject,
+  baseField,
+  fieldType,
+}) => {
+  const template: LLaVAModelFieldInputTemplate = {
+    ...baseField,
+    type: fieldType,
+    default: schemaObject.default ?? undefined,
+  };
   return template;
 };
 
@@ -741,11 +770,13 @@ export const TEMPLATE_BUILDER_MAP: Record<StatefulFieldType['name'], FieldInputT
   IntegerField: buildIntegerFieldInputTemplate,
   IPAdapterModelField: buildIPAdapterModelFieldInputTemplate,
   LoRAModelField: buildLoRAModelFieldInputTemplate,
+  LLaVAModelField: buildLLaVAModelFieldInputTemplate,
   ModelIdentifierField: buildModelIdentifierFieldInputTemplate,
   MainModelField: buildMainModelFieldInputTemplate,
   SchedulerField: buildSchedulerFieldInputTemplate,
   SDXLMainModelField: buildSDXLMainModelFieldInputTemplate,
   SD3MainModelField: buildSD3MainModelFieldInputTemplate,
+  CogView4MainModelField: buildCogView4MainModelFieldInputTemplate,
   FluxMainModelField: buildFluxMainModelFieldInputTemplate,
   SDXLRefinerModelField: buildRefinerModelFieldInputTemplate,
   StringField: buildStringFieldInputTemplate,

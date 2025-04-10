@@ -14,7 +14,7 @@ from invokeai.app.invocations.baseinvocation import (
     invocation,
     invocation_output,
 )
-from invokeai.app.invocations.controlnet_image_processors import ControlField, ControlNetInvocation
+from invokeai.app.invocations.controlnet import ControlField, ControlNetInvocation
 from invokeai.app.invocations.denoise_latents import DenoiseLatentsInvocation
 from invokeai.app.invocations.fields import (
     FieldDescriptions,
@@ -43,7 +43,7 @@ from invokeai.app.invocations.primitives import BooleanOutput, FloatOutput, Inte
 from invokeai.app.invocations.scheduler import SchedulerOutput
 from invokeai.app.invocations.t2i_adapter import T2IAdapterField, T2IAdapterInvocation
 from invokeai.app.services.shared.invocation_context import InvocationContext
-from invokeai.backend.model_manager.config import ModelType, SubModelType
+from invokeai.backend.model_manager.taxonomy import ModelType, SubModelType
 from invokeai.backend.stable_diffusion.schedulers.schedulers import SCHEDULER_NAME_VALUES
 from invokeai.version import __version__
 

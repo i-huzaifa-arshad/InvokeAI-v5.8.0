@@ -31,6 +31,12 @@ def run_app() -> None:
     if app_config.pytorch_cuda_alloc_conf:
         configure_torch_cuda_allocator(app_config.pytorch_cuda_alloc_conf, logger)
 
+    # This import must happen after configure_torch_cuda_allocator() is called, because the module imports torch.
+    from invokeai.backend.util.devices import TorchDevice
+
+    torch_device_name = TorchDevice.get_torch_device_name()
+    logger.info(f"Using torch device: {torch_device_name}")
+
     # Import from startup_utils here to avoid importing torch before configure_torch_cuda_allocator() is called.
     from invokeai.app.util.startup_utils import (
         apply_monkeypatches,
@@ -41,16 +47,15 @@ def run_app() -> None:
     )
 
     # Find an open port, and modify the config accordingly.
-    orig_config_port = app_config.port
-    app_config.port = find_open_port(app_config.port)
-    if orig_config_port != app_config.port:
+    first_open_port = find_open_port(app_config.port)
+    if app_config.port != first_open_port:
+        orig_config_port = app_config.port
+        app_config.port = first_open_port
         logger.warning(f"Port {orig_config_port} is already in use. Using port {app_config.port}.")
 
     # Miscellaneous startup tasks.
     apply_monkeypatches()
     register_mime_types()
-    if app_config.dev_reload:
-        enable_dev_reload()
     check_cudnn(logger)
 
     # Initialize the app and event loop.
@@ -60,6 +65,11 @@ def run_app() -> None:
     # invocations module. The ordering here is implicit, but important - we want to load custom nodes after all the
     # core nodes have been imported so that we can catch when a custom node clobbers a core node.
     load_custom_nodes(custom_nodes_path=app_config.custom_nodes_path, logger=logger)
+
+    if app_config.dev_reload:
+        # load_custom_nodes seems to bypass jurrigged's import sniffer, so be sure to call it *after* they're already
+        # imported.
+        enable_dev_reload(custom_nodes_path=app_config.custom_nodes_path)
 
     # Start the server.
     config = uvicorn.Config(

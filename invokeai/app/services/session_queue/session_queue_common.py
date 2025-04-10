@@ -201,6 +201,12 @@ def get_workflow(queue_item_dict: dict) -> Optional[WorkflowWithoutID]:
     return None
 
 
+class FieldIdentifier(BaseModel):
+    kind: Literal["input", "output"] = Field(description="The kind of field")
+    node_id: str = Field(description="The ID of the node")
+    field_name: str = Field(description="The name of the field")
+
+
 class SessionQueueItemWithoutGraph(BaseModel):
     """Session queue item without the full graph. Used for serialization."""
 
@@ -236,6 +242,20 @@ class SessionQueueItemWithoutGraph(BaseModel):
     )
     retried_from_item_id: Optional[int] = Field(
         default=None, description="The item_id of the queue item that this item was retried from"
+    )
+    is_api_validation_run: bool = Field(
+        default=False,
+        description="Whether this queue item is an API validation run.",
+    )
+    published_workflow_id: Optional[str] = Field(
+        default=None,
+        description="The ID of the published workflow associated with this queue item",
+    )
+    api_input_fields: Optional[list[FieldIdentifier]] = Field(
+        default=None, description="The fields that were used as input to the API"
+    )
+    api_output_fields: Optional[list[FieldIdentifier]] = Field(
+        default=None, description="The nodes that were used as output from the API"
     )
 
     @classmethod
@@ -570,7 +590,10 @@ ValueToInsertTuple: TypeAlias = tuple[
     str | None,  # destination (optional)
     int | None,  # retried_from_item_id (optional, this is always None for new items)
 ]
-"""A type alias for the tuple of values to insert into the session queue table."""
+"""A type alias for the tuple of values to insert into the session queue table.
+
+**If you change this, be sure to update the `enqueue_batch` and `retry_items_by_id` methods in the session queue service!**
+"""
 
 
 def prepare_values_to_insert(

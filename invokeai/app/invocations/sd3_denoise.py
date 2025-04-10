@@ -6,7 +6,7 @@ from diffusers.models.transformers.transformer_sd3 import SD3Transformer2DModel
 from torchvision.transforms.functional import resize as tv_resize
 from tqdm import tqdm
 
-from invokeai.app.invocations.baseinvocation import BaseInvocation, Classification, invocation
+from invokeai.app.invocations.baseinvocation import BaseInvocation, invocation
 from invokeai.app.invocations.constants import LATENT_SCALE_FACTOR
 from invokeai.app.invocations.fields import (
     DenoiseMaskField,
@@ -23,8 +23,8 @@ from invokeai.app.invocations.primitives import LatentsOutput
 from invokeai.app.invocations.sd3_text_encoder import SD3_T5_MAX_SEQ_LEN
 from invokeai.app.services.shared.invocation_context import InvocationContext
 from invokeai.backend.flux.sampling_utils import clip_timestep_schedule_fractional
-from invokeai.backend.model_manager.config import BaseModelType
-from invokeai.backend.sd3.extensions.inpaint_extension import InpaintExtension
+from invokeai.backend.model_manager import BaseModelType
+from invokeai.backend.rectified_flow.rectified_flow_inpaint_extension import RectifiedFlowInpaintExtension
 from invokeai.backend.stable_diffusion.diffusers_pipeline import PipelineIntermediateState
 from invokeai.backend.stable_diffusion.diffusion.conditioning_data import SD3ConditioningInfo
 from invokeai.backend.util.devices import TorchDevice
@@ -36,7 +36,6 @@ from invokeai.backend.util.devices import TorchDevice
     tags=["image", "sd3"],
     category="image",
     version="1.1.1",
-    classification=Classification.Prototype,
 )
 class SD3DenoiseInvocation(BaseInvocation, WithMetadata, WithBoard):
     """Run denoising process with a SD3 model."""
@@ -264,10 +263,10 @@ class SD3DenoiseInvocation(BaseInvocation, WithMetadata, WithBoard):
 
         # Prepare inpaint extension.
         inpaint_mask = self._prep_inpaint_mask(context, latents)
-        inpaint_extension: InpaintExtension | None = None
+        inpaint_extension: RectifiedFlowInpaintExtension | None = None
         if inpaint_mask is not None:
             assert init_latents is not None
-            inpaint_extension = InpaintExtension(
+            inpaint_extension = RectifiedFlowInpaintExtension(
                 init_latents=init_latents,
                 inpaint_mask=inpaint_mask,
                 noise=noise,

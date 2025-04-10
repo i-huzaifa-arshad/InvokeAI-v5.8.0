@@ -236,7 +236,11 @@
         "layout": "Bố Cục",
         "row": "Hàng",
         "board": "Bảng",
-        "saveChanges": "Lưu Thay Đổi"
+        "saveChanges": "Lưu Thay Đổi",
+        "error_withCount_other": "{{count}} lỗi",
+        "value": "Giá Trị",
+        "label": "Nhãn Tên",
+        "systemInformation": "Thông Tin Hệ Thống"
     },
     "prompt": {
         "addPromptTrigger": "Thêm Prompt Trigger",
@@ -769,7 +773,8 @@
         "urlForbiddenErrorMessage": "Bạn có thể cần yêu cầu quyền truy cập từ trang web đang cung cấp model.",
         "urlUnauthorizedErrorMessage": "Bạn có thể cần thiếp lập một token API để dùng được model này.",
         "fluxRedux": "FLUX Redux",
-        "sigLip": "SigLIP"
+        "sigLip": "SigLIP",
+        "llavaOnevision": "LLaVA OneVision"
     },
     "metadata": {
         "guidance": "Hướng Dẫn",
@@ -892,7 +897,6 @@
         "targetNodeFieldDoesNotExist": "Kết nối không phù hợp: đích đến/đầu vào của vùng {{node}}.{{field}} không tồn tại",
         "missingTemplate": "Node không hợp lệ: node {{node}} thuộc loại {{type}} bị thiếu mẫu trình bày (chưa tải?)",
         "unsupportedMismatchedUnion": "Dạng số lượng dữ liệu không khớp với {{firstType}} và {{secondType}}",
-        "unknownOutput": "Đầu Ra Không Rõ: {{name}}",
         "betaDesc": "Trình kích hoạt này vẫn trong giai đoạn beta. Cho đến khi ổn định, nó có thể phá hỏng thay đổi trong khi cập nhật ứng dụng. Chúng tôi dự định hỗ trợ trình kích hoạt này về lâu dài.",
         "cannotConnectInputToInput": "Không thế kết nối đầu vào với đầu vào",
         "showEdgeLabelsHelp": "Hiển thị tên trên kết nối, chỉ ra những node được kết nối",
@@ -1019,7 +1023,11 @@
         "downloadWorkflowError": "Lỗi tải xuống workflow",
         "generatorImagesFromBoard": "Ảnh Từ Bảng",
         "generatorImagesCategory": "Phân Loại",
-        "generatorImages_other": "{{count}} ảnh"
+        "generatorImages_other": "{{count}} ảnh",
+        "unknownField_withName": "Vùng Dữ Liệu Không Rõ \"{{name}}\"",
+        "unexpectedField_withName": "Sai Vùng Dữ Liệu \"{{name}}\"",
+        "unknownFieldEditWorkflowToFix_withName": "Workflow chứa vùng dữ liệu không rõ \"{{name}}\".\nHãy biên tập workflow để sửa lỗi.",
+        "missingField_withName": "Thiếu Vùng Dữ Liệu \"{{name}}\""
     },
     "popovers": {
         "paramCFGRescaleMultiplier": {
@@ -1618,7 +1626,8 @@
         "displayInProgress": "Hiển Thị Hình Ảnh Đang Xử Lý",
         "intermediatesClearedFailed": "Có Vấn Đề Khi Dọn Sạch Sản Phẩm Trung Gian",
         "enableInvisibleWatermark": "Bật Chế Độ Ẩn Watermark",
-        "showDetailedInvocationProgress": "Hiện Dữ Liệu Xử Lý"
+        "showDetailedInvocationProgress": "Hiện Dữ Liệu Xử Lý",
+        "enableHighlightFocusedRegions": "Nhấn Mạnh Khu Vực Chỉ Định"
     },
     "sdxl": {
         "loading": "Đang Tải...",
@@ -2048,7 +2057,8 @@
             "rgNegativePromptNotSupported": "Lệnh Tiêu Cực không được hỗ trợ cho model cơ sở được chọn",
             "rgReferenceImagesNotSupported": "Ảnh Mẫu Khu Vực không được hỗ trợ cho model cơ sở được chọn",
             "rgAutoNegativeNotSupported": "Tự Động Đảo Chiều không được hỗ trợ cho model cơ sở được chọn",
-            "rgNoRegion": "không có khu vực được vẽ"
+            "rgNoRegion": "không có khu vực được vẽ",
+            "fluxFillIncompatibleWithControlLoRA": "LoRA Điều Khiển Được không tương tích với FLUX Fill"
         },
         "pasteTo": "Dán Vào",
         "pasteToAssets": "Tài Nguyên",
@@ -2199,7 +2209,8 @@
         "unableToCopyDesc_theseSteps": "các bước sau",
         "unableToCopyDesc": "Trình duyệt của bạn không hỗ trợ tính năng clipboard. Người dùng Firefox có thể khắc phục theo ",
         "pasteSuccess": "Dán Vào {{destination}}",
-        "pasteFailed": "Dán Thất Bại"
+        "pasteFailed": "Dán Thất Bại",
+        "fluxFillIncompatibleWithT2IAndI2I": "FLUX Fill không tương tích với Từ Ngữ Sang Hình Ảnh và Hình Ảnh Sang Hình Ảnh. Dùng model FLUX khác cho các tính năng này."
     },
     "ui": {
         "tabs": {
@@ -2218,7 +2229,7 @@
     "workflows": {
         "delete": "Xoá",
         "descending": "Giảm Dần",
-        "created": "Ngày Tạo",
+        "created": "Đã Tạo",
         "edit": "Chỉnh Sửa",
         "download": "Tải Xuống",
         "copyShareLink": "Sao Chép Liên Kết Chia Sẻ",
@@ -2244,7 +2255,7 @@
         "saveWorkflow": "Lưu Workflow",
         "problemSavingWorkflow": "Có Vấn Đề Khi Lưu Workflow",
         "noDescription": "Không có mô tả",
-        "updated": "Ngày Cập Nhật",
+        "updated": "Đã Cập Nhật",
         "uploadWorkflow": "Tải Từ Tệp",
         "autoLayout": "Bố Trí Tự Động",
         "loadWorkflow": "$t(common.load) Workflow",
@@ -2256,7 +2267,7 @@
         "saveWorkflowToProject": "Lưu Workflow Vào Dự Án",
         "workflowName": "Tên Workflow",
         "workflowLibrary": "Thư Viện Workflow",
-        "opened": "Ngày Mở",
+        "opened": "Đã Mở",
         "deleteWorkflow": "Xoá Workflow",
         "workflowEditorMenu": "Menu Biên Tập Workflow",
         "openLibrary": "Mở Thư Viện",
@@ -2288,7 +2299,46 @@
             "container": "Hộp Chứa",
             "heading": "Đầu Dòng",
             "text": "Văn Bản",
-            "divider": "Gạch Chia"
+            "divider": "Gạch Chia",
+            "minimum": "Tối Thiểu",
+            "maximum": "Tối Đa",
+            "containerRowLayout": "Hộp Chứa (bố cục hàng)",
+            "containerColumnLayout": "Hộp Chứa (bố cục cột)",
+            "resetOptions": "Tải Lại Lựa Chọn",
+            "addOption": "Thêm Lựa Chọn",
+            "dropdown": "Danh Sách Thả Xuống",
+            "publish": "Đăng Tải",
+            "published": "Đã Đăng",
+            "workflowLocked": "Workflow Bị Khóa",
+            "workflowLockedDuringPublishing": "Workflow bị khóa khi đang điều chỉnh để đăng tải.",
+            "selectOutputNode": "Chọn Node Đầu Ra",
+            "changeOutputNode": "Đổi Node Đầu Ra",
+            "publishedWorkflowOutputs": "Đầu Ra",
+            "unpublishableInputs": "Những đầu vào không đăng tải được sẽ bị bỏ sót",
+            "noPublishableInputs": "Không có đầu vào không đăng tải được",
+            "noOutputNodeSelected": "Không có node đầu ra được chọn",
+            "publishWarnings": "Cảnh Báo",
+            "errorWorkflowHasUnsavedChanges": "Workflow có các thay đổi chưa lưu",
+            "cannotPublish": "Không thể đăng workflow",
+            "publishedWorkflowInputs": "Đầu Vào",
+            "unpublish": "Chưa Đăng",
+            "workflowLockedPublished": "Workflow được đăng tải sẽ bị khóa không thể biên tập.\nBạn có thể ngừng đăng để chỉnh sửa, hoặc tạo một bản sao của nó.",
+            "errorWorkflowHasBatchOrGeneratorNodes": "Workflow có lô node và/hoặc node sản sinh",
+            "errorWorkflowHasInvalidGraph": "Đồ thị workflow không hợp lệ (di chuột đến nút Khởi Động để xem chi tiết)",
+            "errorWorkflowHasNoOutputNode": "Không có node đầu ra được chọn",
+            "warningWorkflowHasUnpublishableInputFields": "Workflow có một số đầu ra không đăng được - chúng sẽ bị bỏ sót khỏi workflow",
+            "publishFailed": "Đăng Tải Thất Bại",
+            "publishFailedDesc": "Có vấn đề khi đăng tải workflow. Xin vui lòng thử lại.",
+            "publishSuccessDesc": "Kiểm tra <LinkComponent>Bảng Dự Án</LinkComponent> để xem tiến độ.",
+            "publishingValidationRun": "Kiểm Tra Tính Hợp Lệ",
+            "publishedWorkflowsLocked": "Workflow đã đăng sẽ bị khóa và không thể biên tập hoặc chạy nữa. Hoặc là ngừng đăng, hoặc là lưu một bản sao của chính nó để biên tập hay chạy workflow này.",
+            "publishInProgress": "Quá trình đăng tải đang diễn ra",
+            "warningWorkflowHasNoPublishableInputFields": "Không có vùng đầu vào đăng tải được được chọn - workflow sẽ chạy với các giá trị mặc định",
+            "publishSuccess": "Workflow của bạn đã được đăng",
+            "publishedWorkflowIsLocked": "Workflow đã đăng đang bị khóa",
+            "publishingValidationRunInProgress": "Quá trình kiểm tra tính hợp lệ đang diễn ra.",
+            "selectingOutputNodeDesc": "Bấm vào node để biến nó thành node đầu ra của workflow.",
+            "selectingOutputNode": "Chọn node đầu ra"
         },
         "yourWorkflows": "Workflow Của Bạn",
         "browseWorkflows": "Khám Phá Workflow",
@@ -2300,7 +2350,13 @@
         "filterByTags": "Lọc Theo Nhãn",
         "recentlyOpened": "Mở Gần Đây",
         "private": "Cá Nhân",
-        "loadMore": "Tải Thêm"
+        "loadMore": "Tải Thêm",
+        "view": "Xem",
+        "deselectAll": "Huỷ Chọn Tất Cả",
+        "noRecentWorkflows": "Không Có Workflows Gần Đây",
+        "recommended": "Có Thể Bạn Sẽ Cần",
+        "emptyStringPlaceholder": "<xâu ký tự trống>",
+        "published": "Đã Đăng"
     },
     "upscaling": {
         "missingUpscaleInitialImage": "Thiếu ảnh dùng để upscale",
@@ -2327,7 +2383,8 @@
         "gettingStartedSeries": "Cần thêm hướng dẫn? Xem thử <LinkComponent>Bắt Đầu Làm Quen</LinkComponent> để biết thêm mẹo khai thác toàn bộ tiềm năng của Invoke Studio.",
         "toGetStarted": "Để bắt đầu, hãy nhập lệnh vào hộp và nhấp chuột vào <StrongComponent>Kích Hoạt</StrongComponent> để tạo ra bức ảnh đầu tiên. Chọn một mẫu trình bày cho lệnh để cải thiện kết quả. Bạn có thể chọn để lưu ảnh trực tiếp vào <StrongComponent>Thư Viện Ảnh</StrongComponent> hoặc chỉnh sửa chúng ở <StrongComponent>Canvas</StrongComponent>.",
         "noModelsInstalled": "Dường như bạn chưa tải model nào cả! Bạn có thể <DownloadStarterModelsButton>tải xuống các model khởi đầu</DownloadStarterModelsButton> hoặc <ImportModelsButton>nhập vào thêm model</ImportModelsButton>.",
-        "lowVRAMMode": "Cho hiệu suất tốt nhất, hãy làm theo <LinkComponent>hướng dẫn VRAM Thấp</LinkComponent> của chúng tôi."
+        "lowVRAMMode": "Cho hiệu suất tốt nhất, hãy làm theo <LinkComponent>hướng dẫn VRAM Thấp</LinkComponent> của chúng tôi.",
+        "toGetStartedWorkflow": "Để bắt đầu, hãy điền vào khu vực bên trái và bấm <StrongComponent>Kích Hoạt</StrongComponent> nhằm tạo sinh ảnh. Muốn khám phá thêm workflow? Nhấp vào <StrongComponent>icon thư mục</StrongComponent> nằm cạnh tiêu đề workflow để xem một dãy các mẫu trình bày khác."
     },
     "whatsNew": {
         "whatsNewInInvoke": "Có Gì Mới Ở Invoke",
@@ -2335,8 +2392,9 @@
         "watchRecentReleaseVideos": "Xem Video Phát Hành Mới Nhất",
         "watchUiUpdatesOverview": "Xem Tổng Quan Về Những Cập Nhật Cho Giao Diện Người Dùng",
         "items": [
-            "Trình Quản Lý Bộ Nhớ: Thiết lập mới cho người dùng với GPU Nvidia để giảm lượng VRAM sử dụng.",
-            "Hiệu suất: Các cải thiện tiếp theo nhằm gói gọn hiệu suất và khả năng phản hồi của ứng dụng."
+            "Workflow: Hỗ trợ xâu ký tự thả xuống tùy chỉnh trong Trình Tạo Vùng Nhập.",
+            "FLUX: Hỗ trợ FLUX Fill trong Workflow và Canvas.",
+            "LLaVA OneVision VLLM: Hỗ trợ phiên bản Beta trong Workflow."
         ]
     },
     "upsell": {

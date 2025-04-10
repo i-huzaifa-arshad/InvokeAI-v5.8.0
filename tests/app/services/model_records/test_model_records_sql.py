@@ -16,19 +16,16 @@ from invokeai.app.services.model_records import (
     UnknownModelException,
 )
 from invokeai.app.services.model_records.model_records_base import ModelRecordChanges
+from invokeai.backend.model_manager import BaseModelType, ModelFormat, ModelType
 from invokeai.backend.model_manager.config import (
-    BaseModelType,
     ControlAdapterDefaultSettings,
     MainDiffusersConfig,
     MainModelDefaultSettings,
-    ModelFormat,
-    ModelSourceType,
-    ModelType,
     TextualInversionFileConfig,
     VAEDiffusersConfig,
 )
+from invokeai.backend.model_manager.taxonomy import ModelSourceType
 from invokeai.backend.util.logging import InvokeAILogger
-from tests.backend.model_manager.model_manager_fixtures import *  # noqa F403
 from tests.fixtures.sqlite_database import create_mock_sqlite_database
 
 
@@ -48,6 +45,7 @@ def example_ti_config(key: Optional[str] = None) -> TextualInversionFileConfig:
         source="test/source/",
         source_type=ModelSourceType.Path,
         path="/tmp/pokemon.bin",
+        file_size=1024,
         name="old name",
         base=BaseModelType.StableDiffusion1,
         type=ModelType.TextualInversion,
@@ -131,6 +129,7 @@ def test_filter(store: ModelRecordServiceBase):
         base=BaseModelType.StableDiffusion1,
         type=ModelType.Main,
         hash="CONFIG1HASH",
+        file_size=1001,
         source="test/source",
         source_type=ModelSourceType.Path,
     )
@@ -141,6 +140,7 @@ def test_filter(store: ModelRecordServiceBase):
         base=BaseModelType.StableDiffusion1,
         type=ModelType.Main,
         hash="CONFIG2HASH",
+        file_size=1002,
         source="test/source",
         source_type=ModelSourceType.Path,
     )
@@ -151,6 +151,7 @@ def test_filter(store: ModelRecordServiceBase):
         base=BaseModelType("sd-2"),
         type=ModelType.VAE,
         hash="CONFIG3HASH",
+        file_size=1003,
         source="test/source",
         source_type=ModelSourceType.Path,
     )
@@ -181,6 +182,7 @@ def test_unique(store: ModelRecordServiceBase):
         type=ModelType.Main,
         name="nonuniquename",
         hash="CONFIG1HASH",
+        file_size=1004,
         source="test/source/",
         source_type=ModelSourceType.Path,
     )
@@ -190,6 +192,7 @@ def test_unique(store: ModelRecordServiceBase):
         type=ModelType.Main,
         name="nonuniquename",
         hash="CONFIG1HASH",
+        file_size=1005,
         source="test/source/",
         source_type=ModelSourceType.Path,
     )
@@ -199,6 +202,7 @@ def test_unique(store: ModelRecordServiceBase):
         type=ModelType.VAE,
         name="nonuniquename",
         hash="CONFIG1HASH",
+        file_size=1006,
         source="test/source/",
         source_type=ModelSourceType.Path,
     )
@@ -208,6 +212,7 @@ def test_unique(store: ModelRecordServiceBase):
         type=ModelType.Main,
         name="nonuniquename",
         hash="CONFIG1HASH",
+        file_size=1007,
         source="test/source/",
         source_type=ModelSourceType.Path,
     )
@@ -230,6 +235,7 @@ def test_filter_2(store: ModelRecordServiceBase):
         base=BaseModelType.StableDiffusion1,
         type=ModelType.Main,
         hash="CONFIG1HASH",
+        file_size=1008,
         source="test/source/",
         source_type=ModelSourceType.Path,
     )
@@ -239,6 +245,7 @@ def test_filter_2(store: ModelRecordServiceBase):
         base=BaseModelType.StableDiffusion1,
         type=ModelType.Main,
         hash="CONFIG2HASH",
+        file_size=1009,
         source="test/source/",
         source_type=ModelSourceType.Path,
     )
@@ -248,6 +255,7 @@ def test_filter_2(store: ModelRecordServiceBase):
         base=BaseModelType("sd-2"),
         type=ModelType.Main,
         hash="CONFIG3HASH",
+        file_size=1010,
         source="test/source/",
         source_type=ModelSourceType.Path,
     )
@@ -257,6 +265,7 @@ def test_filter_2(store: ModelRecordServiceBase):
         base=BaseModelType("sdxl"),
         type=ModelType.Main,
         hash="CONFIG3HASH",
+        file_size=1011,
         source="test/source/",
         source_type=ModelSourceType.Path,
     )
@@ -266,6 +275,7 @@ def test_filter_2(store: ModelRecordServiceBase):
         base=BaseModelType.StableDiffusion1,
         type=ModelType.VAE,
         hash="CONFIG3HASH",
+        file_size=1012,
         source="test/source/",
         source_type=ModelSourceType.Path,
     )

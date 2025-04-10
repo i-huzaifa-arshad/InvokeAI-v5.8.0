@@ -91,14 +91,37 @@ const zNodeFieldIntegerSettings = z.object({
 export type NodeFieldIntegerSettings = z.infer<typeof zNodeFieldIntegerSettings>;
 export const getIntegerFieldSettingsDefaults = (): NodeFieldIntegerSettings => zNodeFieldIntegerSettings.parse({});
 
-export const zStringComponent = z.enum(['input', 'textarea']);
+const zStringOption = z
+  .object({
+    label: z.string(),
+    value: z.string(),
+  })
+  .default({ label: '', value: '' });
+type StringOption = z.infer<typeof zStringOption>;
+export const getDefaultStringOption = (): StringOption => ({ label: '', value: '' });
+export const zStringComponent = z.enum(['input', 'textarea', 'dropdown']);
 const STRING_FIELD_CONFIG_TYPE = 'string-field-config';
-const zNodeFieldStringSettings = z.object({
+const zNodeFieldStringInputSettings = z.object({
   type: z.literal(STRING_FIELD_CONFIG_TYPE).default(STRING_FIELD_CONFIG_TYPE),
-  component: zStringComponent.default('input'),
+  component: z.literal('input').default('input'),
 });
+const zNodeFieldStringTextareaSettings = z.object({
+  type: z.literal(STRING_FIELD_CONFIG_TYPE).default(STRING_FIELD_CONFIG_TYPE),
+  component: z.literal('textarea').default('textarea'),
+});
+const zNodeFieldStringDropdownSettings = z.object({
+  type: z.literal(STRING_FIELD_CONFIG_TYPE).default(STRING_FIELD_CONFIG_TYPE),
+  component: z.literal('dropdown').default('dropdown'),
+  options: z.array(zStringOption),
+});
+export type NodeFieldStringDropdownSettings = z.infer<typeof zNodeFieldStringDropdownSettings>;
+const zNodeFieldStringSettings = z.union([
+  zNodeFieldStringInputSettings,
+  zNodeFieldStringTextareaSettings,
+  zNodeFieldStringDropdownSettings,
+]);
 export type NodeFieldStringSettings = z.infer<typeof zNodeFieldStringSettings>;
-export const getStringFieldSettingsDefaults = (): NodeFieldStringSettings => zNodeFieldStringSettings.parse({});
+export const getStringFieldSettingsDefaults = (): NodeFieldStringSettings => zNodeFieldStringInputSettings.parse({});
 
 const zNodeFieldData = z.object({
   fieldIdentifier: zFieldIdentifier,
@@ -235,8 +258,10 @@ const zFormElement = z.union([zContainerElement, zNodeFieldElement, zHeadingElem
 
 export type FormElement = z.infer<typeof zFormElement>;
 
+const ROOT_ELEMENT_ID = 'root';
 export const getDefaultForm = (): BuilderForm => {
   const rootElement = buildContainer('column', []);
+  rootElement.id = ROOT_ELEMENT_ID;
   return {
     elements: {
       [rootElement.id]: rootElement,
@@ -354,6 +379,7 @@ export const zWorkflowV3 = z.object({
   }),
   // Use the validated form schema!
   form: zValidatedBuilderForm,
+  is_published: z.boolean().nullish(),
 });
 export type WorkflowV3 = z.infer<typeof zWorkflowV3>;
 // #endregion

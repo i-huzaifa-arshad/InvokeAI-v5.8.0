@@ -1,12 +1,13 @@
 import type { FlexProps, SystemStyleObject } from '@invoke-ai/ui-library';
 import { Flex, IconButton, Spacer, Text } from '@invoke-ai/ui-library';
 import { useAppDispatch } from 'app/store/storeHooks';
+import { InputFieldGate } from 'features/nodes/components/flow/nodes/Invocation/fields/InputFieldGate';
 import { ContainerElementSettings } from 'features/nodes/components/sidePanel/builder/ContainerElementSettings';
 import { useDepthContext } from 'features/nodes/components/sidePanel/builder/contexts';
 import { NodeFieldElementSettings } from 'features/nodes/components/sidePanel/builder/NodeFieldElementSettings';
 import { useMouseOverFormField } from 'features/nodes/hooks/useMouseOverNode';
 import { useZoomToNode } from 'features/nodes/hooks/useZoomToNode';
-import { formElementRemoved } from 'features/nodes/store/workflowSlice';
+import { formElementRemoved } from 'features/nodes/store/nodesSlice';
 import type { FormElement, NodeFieldElement } from 'features/nodes/types/workflow';
 import { isContainerElement, isNodeFieldElement } from 'features/nodes/types/workflow';
 import { camelCase } from 'lodash-es';
@@ -47,8 +48,16 @@ export const FormElementEditModeHeader = memo(({ element, dragHandleRef, ...rest
       <Label element={element} />
       <Spacer />
       {isContainerElement(element) && <ContainerElementSettings element={element} />}
-      {isNodeFieldElement(element) && <ZoomToNodeButton element={element} />}
-      {isNodeFieldElement(element) && <NodeFieldElementSettings element={element} />}
+      {isNodeFieldElement(element) && (
+        <InputFieldGate
+          nodeId={element.data.fieldIdentifier.nodeId}
+          fieldName={element.data.fieldIdentifier.fieldName}
+          fallback={null} // Do not render these buttons if the field is not found
+        >
+          <ZoomToNodeButton element={element} />
+          <NodeFieldElementSettings element={element} />
+        </InputFieldGate>
+      )}
       <RemoveElementButton element={element} />
     </Flex>
   );
@@ -58,11 +67,8 @@ FormElementEditModeHeader.displayName = 'FormElementEditModeHeader';
 const ZoomToNodeButton = memo(({ element }: { element: NodeFieldElement }) => {
   const { t } = useTranslation();
   const { nodeId } = element.data.fieldIdentifier;
-  const zoomToNode = useZoomToNode();
+  const zoomToNode = useZoomToNode(nodeId);
   const mouseOverFormField = useMouseOverFormField(nodeId);
-  const onClick = useCallback(() => {
-    zoomToNode(nodeId);
-  }, [nodeId, zoomToNode]);
 
   return (
     <IconButton
@@ -70,7 +76,7 @@ const ZoomToNodeButton = memo(({ element }: { element: NodeFieldElement }) => {
       onMouseOut={mouseOverFormField.handleMouseOut}
       tooltip={t('workflows.builder.zoomToNode')}
       aria-label={t('workflows.builder.zoomToNode')}
-      onClick={onClick}
+      onClick={zoomToNode}
       icon={<PiGpsFixBold />}
       variant="link"
       size="sm"

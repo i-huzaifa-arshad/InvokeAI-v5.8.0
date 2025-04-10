@@ -1,8 +1,8 @@
 import { useAppSelector } from 'app/store/storeHooks';
-import { InputFieldGate } from 'features/nodes/components/flow/nodes/Invocation/fields/InputFieldGate';
 import { NodeFieldElementEditMode } from 'features/nodes/components/sidePanel/builder/NodeFieldElementEditMode';
 import { NodeFieldElementViewMode } from 'features/nodes/components/sidePanel/builder/NodeFieldElementViewMode';
-import { selectWorkflowMode, useElement } from 'features/nodes/store/workflowSlice';
+import { useElement } from 'features/nodes/components/sidePanel/builder/use-element';
+import { selectWorkflowMode } from 'features/nodes/store/workflowLibrarySlice';
 import { isNodeFieldElement } from 'features/nodes/types/workflow';
 import { memo } from 'react';
 
@@ -15,19 +15,11 @@ export const NodeFieldElement = memo(({ id }: { id: string }) => {
   }
 
   if (mode === 'view') {
-    return (
-      <InputFieldGate nodeId={el.data.fieldIdentifier.nodeId} fieldName={el.data.fieldIdentifier.fieldName}>
-        <NodeFieldElementViewMode el={el} />
-      </InputFieldGate>
-    );
+    return <NodeFieldElementViewMode el={el} />;
   }
 
   // mode === 'edit'
-  return (
-    <InputFieldGate nodeId={el.data.fieldIdentifier.nodeId} fieldName={el.data.fieldIdentifier.fieldName}>
-      <NodeFieldElementEditMode el={el} />
-    </InputFieldGate>
-  );
+  return <NodeFieldElementEditMode el={el} />;
 });
 
 NodeFieldElement.displayName = 'NodeFieldElement';

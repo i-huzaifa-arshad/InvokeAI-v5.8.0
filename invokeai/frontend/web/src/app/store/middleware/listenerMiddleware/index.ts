@@ -10,7 +10,6 @@ import { addDeleteBoardAndImagesFulfilledListener } from 'app/store/middleware/l
 import { addBoardIdSelectedListener } from 'app/store/middleware/listenerMiddleware/listeners/boardIdSelected';
 import { addBulkDownloadListeners } from 'app/store/middleware/listenerMiddleware/listeners/bulkDownload';
 import { addEnqueueRequestedLinear } from 'app/store/middleware/listenerMiddleware/listeners/enqueueRequestedLinear';
-import { addEnqueueRequestedNodes } from 'app/store/middleware/listenerMiddleware/listeners/enqueueRequestedNodes';
 import { addGalleryImageClickedListener } from 'app/store/middleware/listenerMiddleware/listeners/galleryImageClicked';
 import { addGalleryOffsetChangedListener } from 'app/store/middleware/listenerMiddleware/listeners/galleryOffsetChanged';
 import { addGetOpenAPISchemaListener } from 'app/store/middleware/listenerMiddleware/listeners/getOpenAPISchema';
@@ -26,7 +25,6 @@ import { addModelsLoadedListener } from 'app/store/middleware/listenerMiddleware
 import { addDynamicPromptsListener } from 'app/store/middleware/listenerMiddleware/listeners/promptChanged';
 import { addSetDefaultSettingsListener } from 'app/store/middleware/listenerMiddleware/listeners/setDefaultSettings';
 import { addSocketConnectedEventListener } from 'app/store/middleware/listenerMiddleware/listeners/socketConnected';
-import { addUpdateAllNodesRequestedListener } from 'app/store/middleware/listenerMiddleware/listeners/updateAllNodesRequested';
 import type { AppDispatch, RootState } from 'app/store/store';
 
 import { addArchivedOrDeletedBoardListener } from './listeners/addArchivedOrDeletedBoardListener';
@@ -63,7 +61,6 @@ addGalleryImageClickedListener(startAppListening);
 addGalleryOffsetChangedListener(startAppListening);
 
 // User Invoked
-addEnqueueRequestedNodes(startAppListening);
 addEnqueueRequestedLinear(startAppListening);
 addEnqueueRequestedUpscale(startAppListening);
 addAnyEnqueuedListener(startAppListening);
@@ -86,9 +83,6 @@ addArchivedOrDeletedBoardListener(startAppListening);
 
 // Node schemas
 addGetOpenAPISchemaListener(startAppListening);
-
-// Workflows
-addUpdateAllNodesRequestedListener(startAppListening);
 
 // Models
 addModelSelectedListener(startAppListening);

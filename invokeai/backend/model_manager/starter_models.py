@@ -2,7 +2,7 @@ from typing import Optional
 
 from pydantic import BaseModel
 
-from invokeai.backend.model_manager.config import BaseModelType, ModelFormat, ModelType
+from invokeai.backend.model_manager.taxonomy import BaseModelType, ModelFormat, ModelType
 
 
 class StarterModelWithoutDependencies(BaseModel):
@@ -593,6 +593,16 @@ swinir = StarterModel(
 
 # endregion
 
+# region CogView4
+cogview4 = StarterModel(
+    name="CogView4",
+    base=BaseModelType.CogView4,
+    source="THUDM/CogView4-6B",
+    description="The base CogView4 model (~29GB).",
+    type=ModelType.Main,
+)
+# endregion
+
 # region SigLIP
 siglip = StarterModel(
     name="SigLIP - google/siglip-so400m-patch14-384",
@@ -611,6 +621,26 @@ flux_redux = StarterModel(
     description="FLUX Redux model (for image variation).",
     type=ModelType.FluxRedux,
     dependencies=[siglip],
+)
+# endregion
+
+# region LlavaOnevisionModel
+llava_onevision = StarterModel(
+    name="LLaVA Onevision Qwen2 0.5B",
+    base=BaseModelType.Any,
+    source="llava-hf/llava-onevision-qwen2-0.5b-ov-hf",
+    description="LLaVA Onevision VLLM model",
+    type=ModelType.LlavaOnevision,
+)
+# endregion
+
+# region FLUX Fill
+flux_fill = StarterModel(
+    name="FLUX Fill",
+    base=BaseModelType.Flux,
+    source="black-forest-labs/FLUX.1-Fill-dev::flux1-fill-dev.safetensors",
+    description="FLUX Fill model (for inpainting).",
+    type=ModelType.Main,
 )
 # endregion
 
@@ -683,6 +713,9 @@ STARTER_MODELS: list[StarterModel] = [
     clip_l_encoder,
     siglip,
     flux_redux,
+    llava_onevision,
+    flux_fill,
+    cogview4,
 ]
 
 sd1_bundle: list[StarterModel] = [
@@ -731,6 +764,7 @@ flux_bundle: list[StarterModel] = [
     flux_canny_control_lora,
     flux_depth_control_lora,
     flux_redux,
+    flux_fill,
 ]
 
 STARTER_BUNDLES: dict[str, list[StarterModel]] = {
